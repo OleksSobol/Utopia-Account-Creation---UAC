@@ -4,6 +4,7 @@ import time
 
 import requests, random
 import static_vars
+import config
 
 
 def create_powercode_account(url, api_key, customer_info, customer_portal_password="WelcomeToGlobalNet", max_retries=3,
@@ -74,7 +75,7 @@ def create_powercode_account(url, api_key, customer_info, customer_portal_passwo
 
 def read_powercode_account(customerID):
     account_data = {
-        'apiKey': static_vars.PC_API_KEY,
+        'apiKey': config.PC_API_KEY,
         'action': 'readCustomer',
         'customerID': customerID,
     }
@@ -85,7 +86,7 @@ def read_powercode_account(customerID):
 # Read account
 def get_customer_by_external_id(external_id):
     account_data = {
-        'apiKey': static_vars.PC_API_KEY,
+        'apiKey': config.PC_API_KEY,
         'action': 'readCustomer',
         'extAccountID': external_id,
     }
@@ -97,7 +98,7 @@ def get_customer_by_external_id(external_id):
 # Search customer
 def search_powercode_customers(searchString):
     account_data = {
-        'apiKey': static_vars.PC_API_KEY,
+        'apiKey': config.PC_API_KEY,
         'action': 'searchCustomers',
         'searchString': searchString,
     }
@@ -163,7 +164,7 @@ def create_powercode_ticket(customer_id, customer_name=""):
 
     # print(customer_id)
     ticket_data = {
-        'apiKey': static_vars.PC_API_KEY,
+        'apiKey': config.PC_API_KEY,
         'action': 'createTicket',
         "type": "Individual",
         "summary": "BZN - Customer has requested Global Net Fiber Service",
@@ -191,7 +192,7 @@ def create_powercode_ticket(customer_id, customer_name=""):
 
 def read_powercode_ticket(ticket_id):
     ticket_data = {
-        'apiKey': static_vars.PC_API_KEY,
+        'apiKey': config.PC_API_KEY,
         'action': 'readTicket',
         "ticketID": ticket_id
     }
@@ -245,7 +246,7 @@ def add_customer_service_plan(url, api, customer_id, utopia_service):
     
 def read_custom_action(action):
     fields = {
-        "apiKey": static_vars.PC_API_KEY,
+        "apiKey": config.PC_API_KEY,
         "action": action,
     }
 

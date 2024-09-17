@@ -2,10 +2,11 @@
 import requests
 import json
 import static_vars
+import config
 
 # setting up params for API URL
 params = {
-    'apikey': static_vars.UTOPIA_API_KEY,
+    'apikey': config.UTOPIA_API_KEY,
 }
 
 
@@ -29,7 +30,7 @@ def getCustomerFromUtopia(orderref):
 # get MAC address of router from UTOPIA
 def getUtopiaCustomerMAC(siteid):
     JSON_REQUEST = {
-        "apikey": static_vars.UTOPIA_API_KEY,
+        "apikey": config.UTOPIA_API_KEY,
         "siteid": siteid,
     }
 
@@ -47,7 +48,7 @@ def getUtopiaCustomerMAC(siteid):
 # This endpoint allows the service provider to query service details, optionally limited by various filters
 def getCustomerService(siteid):
     JSON_REQUEST = {
-        "apikey": static_vars.UTOPIA_API_KEY,
+        "apikey": config.UTOPIA_API_KEY,
         "siteid": siteid,
     }
 
@@ -65,7 +66,7 @@ def getCustomerService(siteid):
 # a json response is sent.
 def getContractDownload(orderref):
     JSON_REQUEST = {
-        "apikey": static_vars.UTOPIA_API_KEY,
+        "apikey": config.UTOPIA_API_KEY,
         "orderref": orderref,
     }
 
@@ -83,7 +84,7 @@ def download_contract_pdf(orderref):
 
     """
     json_request = {
-        "apikey": static_vars.UTOPIA_API_KEY,
+        "apikey": config.UTOPIA_API_KEY,
         "orderref": orderref,
     }
 
