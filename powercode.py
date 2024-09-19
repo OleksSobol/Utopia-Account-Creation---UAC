@@ -208,37 +208,21 @@ def read_powercode_ticket(ticket_id):
     return PC_response
 
 
-
-
-### Service plans
-
-def add_customer_service_plan(url, api, customer_id, utopia_service):
+# Service plans methods
+def add_customer_service_plan(customer_id, service_plan_id):
     """
-    REAL  PC:
-    ID  Name
-    139	YF Residential 250
-    140	YF Residential 1000
-    161 - YF Gig 2024    
-
+    Add a customer service plan to PowerCode.
     """
-    print("from add_customer_service_plan:", utopia_service)
-    if utopia_service == "1 Gbps":
-        service_id = 164
-    elif utopia_service == "250 Mbps":
-        service_id = 163
-    else:
-        service_id = 163
-
     service_data = {
-        'apiKey': api,
+        'apiKey': config.PC_API_KEY,
         'action': 'addCustomerService',
         'customerID': customer_id,
-        'serviceID': service_id,
+        'serviceID': service_plan_id,
         'quantity': 5,
         'prorateService': 0
     }
 
-    pc_response = requests.post(url + ":444/api/1/index.php", data=service_data, verify=False)
+    pc_response = requests.post(static_vars.PC_URL + ":444/api/1/index.php", data=service_data, verify=False)
 
     return pc_response.json()
 

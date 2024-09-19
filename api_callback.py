@@ -9,6 +9,7 @@ from flask_mail import Mail, Message
 import powercode as PowerCode
 import utopia as Utopia
 import static_vars
+import config
 
 # Disable warnings
 urllib3.disable_warnings()
@@ -93,7 +94,7 @@ class UtopiaAPIHandler:
 
         customer_id = PowerCode.create_powercode_account(
             static_vars.PC_URL,
-            static_vars.PC_API_KEY,
+            config.PC_API_KEY,
             customer_to_powercode,
             customer_portal_password="WelcomeToGlobalNet"
         )
@@ -107,14 +108,48 @@ class UtopiaAPIHandler:
             )
         else:
             # ADD SERVICE PLAN
-            utopia_customes_service_plan = customer_from_utopia["orderitems"][0]["description"]
-            service_plan_respond = PowerCode.add_customer_service_plan(
-                static_vars.PC_URL,
-                static_vars.PC_API_KEY,
+            # Determine the service ID before the function call
+            utopia_customers_service_plan = customer_from_utopia["orderitems"][0]["description"]
+
+            # Create a mapping for flexibility, easily add more plans in the future
+            # Service plan mapping for Utopia plans
+            service_plan_mapping = {
+                "1 Gbps": 164,
+                "250 Mbps": 163,
+            }
+
+            # Additional plans (manually added or other criteria-based)
+            additional_service_plan_mapping = {
+                "Bond fee": 172,
+            }
+
+            # Get Utopia service plan
+            utopia_customes_service_plan = customer_from_utopia["orderitems"][0][
+                "description"] if "orderitems" in customer_from_utopia else None
+
+            # Get the service ID for the Utopia plan (with a default if not found)
+            service_id_utopia = service_plan_mapping.get(utopia_customes_service_plan,
+                                                         163)  # Default to 163 if not found
+
+            # Add Utopia service plan
+            service_plan_respond_utopia = PowerCode.add_customer_service_plan(
                 customer_id,
-                utopia_customes_service_plan
+                service_id_utopia
             )
-            logging.info(service_plan_respond)
+
+            logging.info(f"Utopia service added: {service_plan_respond_utopia}")
+
+            # Step 3: Add an additional plan manually (if needed)
+            additional_plan = "Bond fee"  # Example, this can be dynamic based on the customer or logic
+            service_id_additional = additional_service_plan_mapping.get(additional_plan, None)
+
+            if service_id_additional:
+                service_plan_respond_additional = PowerCode.add_customer_service_plan(
+                    customer_id,
+                    service_id_additional
+                )
+                logging.info(f"Additional service added: {service_plan_respond_additional}")
+
             # Create ticket
             PowerCode.create_powercode_ticket(customer_id, customer_to_powercode["firstname"])
 
