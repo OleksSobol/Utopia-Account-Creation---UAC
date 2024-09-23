@@ -1,55 +1,66 @@
 # Utopia API Handler
 
-## Overview
-This Python application is a Flask-based API handler that processes requests from Utopia and PowerCode systems. It listens for API callbacks, processes customer data, and interacts with Utopia and PowerCode to create customer accounts and add service plans. The application also sends notification emails regarding the status of customer creation and handles PDF contract downloads.
+This Python project is designed to handle customer data integration between Utopia and PowerCode through an API. It processes orders from Utopia, searches for customers in PowerCode, and creates customer records in PowerCode if they do not exist. Additionally, it assigns service plans and sends notification emails.
 
 ## Features
-- Processes API callbacks from Utopia.
-- Searches for customers in Utopia and PowerCode.
-- Creates new customer accounts in PowerCode when needed.
-- Adds service plans to PowerCode customer accounts.
-- Sends notification emails to specified recipients.
-- Downloads and attaches PDF contracts to emails.
-- Logs all interactions and errors for tracking.
 
-## Technologies Used
-- **Flask**: A lightweight web framework for handling HTTP requests.
-- **Flask-Mail**: For sending email notifications.
-- **Requests**: To interact with external APIs.
-- **Logging**: For logging events and errors.
-- **Utopia & PowerCode APIs**: External systems integrated for customer and service management.
+1. **API Endpoint**: Handles incoming API callbacks from Utopia.
+2. **Customer Management**: Searches for customers in PowerCode, creates new records if not found.
+3. **Service Plan Assignment**: Adds appropriate service plans from Utopia and additional manual plans.
+4. **Email Notifications**: Sends emails for success or failure, with attached contracts.
+5. **Logging**: Logs actions and errors to `api_class.log`.
 
-## Installation
+## Requirements
 
-### Prerequisites
 - Python 3.x
-- Pip (Python package manager)
-- `requests`, `flask`, and `flask_mail` libraries. Install them using:
+- Flask
+- Flask-Mail
+- Requests
+- Utopia and PowerCode Python modules (custom imports)
 
+## Setup
 
+1. Install dependencies:
+   pip install flask flask-mail requests
+2. Configure the following constants in config.py:
+PC_API_KEY: PowerCode API key.
+PC_URL: PowerCode base URL.
+3. Make sure to have the following email-related constants configured:
+MAIL_SERVER = 'theglobal-net.mail.protection.outlook.com'
+MAIL_PORT = 25
+EMAIL_SENDER = 'no-reply@theglobal.net'
+EMAIL_RECIPIENTS = ['email1@domain.com', 'email2@domain.com']
 
-# Changelog
+## How to Run
+1. Clone the repository and navigate to the directory.
+2. Run the script:
+python utopia_api_handler.py
+3.The application will start on http://localhost:5050.
 
-All notable changes to this project will be documented in this file.
-## [0.0.4] - 09-17-2024
+## API Endpoints
+/api-callback: Accepts POST requests from Utopia containing customer order data.
 
-### Added
-- uploaded project to GitHub
+## Service Plan Management
+The system allows for flexible service plan assignment:
 
-## [0.0.3] - 2024-01-20
+Utopia Plans: These are mapped in the service_plan_mapping dictionary based on the plan description.
+Additional Plans: You can manually assign extra service plans using the additional_service_plan_mapping.
 
-### Added
-- added site_id from Utopia as external_id to powercode customer
+## Example Callback
+When Utopia sends a "Project New Order" event, the following happens:
 
-## [0.0.2] - 2023-07-10
+The customer is searched in PowerCode.
+If the customer doesn't exist, they are created.
+A service plan is assigned based on the order details.
+An email is sent to notify about the customer creation.
 
-### Added
+## Logging
+All API events and errors are logged to api_class.log for audit and troubleshooting.
 
-- Whole project
+## Error Handling
+If there are errors in customer creation or service plan assignment, an email will be sent to the recipients specified with details of the issue.
 
-## [0.0.1] - 2023-*-*
+javascript
+Copy code
 
-### Added
-
-- This CHANGELOG file to hopefully serve as an evolving example of a
-  standardized open source project CHANGELOG.
+This can be directly used as a `README.md` file in your project.
