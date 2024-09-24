@@ -47,6 +47,7 @@ class UtopiaAPIHandler:
             event = request_data['event']
             orderref = request_data['orderref']
             msg = request_data["msg"]
+            logging.info(f"Info received: Event: {event} Orderref: {orderref} Msg: {msg}")
             self.handle_information_from_post(event, orderref, msg)
             response = {"data": "Information received"}
         except Exception as e:
