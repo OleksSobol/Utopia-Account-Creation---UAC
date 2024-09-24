@@ -5,6 +5,7 @@ import time
 import requests, random
 import static_vars
 import config
+import os
 
 
 def create_powercode_account(url, api_key, customer_info, customer_portal_password="WelcomeToGlobalNet", max_retries=3,
@@ -109,58 +110,19 @@ def search_powercode_customers(searchString):
 
 ### Tickets ###
 def create_powercode_ticket(customer_id, customer_name=""):
-    new_desc = \
-    f"""
-    <p>Hello {customer_name},</p>
-    <p>Thank you for your recent request for Internet Service with Global Net via Yellowstone Fiber.&nbsp; We have received notification of your request through the Yellowstone Fiber portal. Global Net will monitor the construction progress in partnership with them.&nbsp; If you have any questions regarding the construction they can be reached at 406-312-5777.</p>
-    <p>In preparation for what is to come here are a few things to consider, plan for, and discuss with the technician when they arrive:</p>
-    <ol>
-        <li>
-            <p>Where should the Fiber ONT (modem) be installed?</p>
-            <ul>
-                <li>Somewhere near a power outlet</li>
-                <li>Somewhere accessible for troubleshooting purposes</li>
-                <li>At your Smart Panel if you have one (see below for more information)</li>
-            </ul>
-        <p>Yellowstone Fiber will install the ONT and run a single Ethernet cable to your preferred, but reasonable, location for a router.&nbsp;<br>A link to the Top 10 Router Recommendations by Yellowstone Fiber can be found <a href="https://www.yellowstonefiber.com/top-10-router-recommendations/">HERE</a>.</p>
-        </li>
-        <li>
-            <p>Where should your router be located?</p>
-            <ul>
-                <li>Centrally located in an open area of your home/office to ensure the best WiFi coverage</li><li>Somewhere easily accessible for troubleshooting</li>
-                <li>As high up as possible to avoid obstruction by other items or devices</li>
-                <li>At your Smart Panel if you have one (see below for more information)
-                </li>
-            </ul>
-        </li>
-        <li>
-            <p>Where should you&nbsp;<strong><u>NOT</u></strong>&nbsp;place your router?</p>
-            <ul>
-                <li>In a closet</li>
-                <li>In a drawer</li>
-                <li>On the floor</li>
-                <li>In a crawlspace</li>
-                <li>In a pantry</li>
-                <li>Under a sink</li>
-                <li>In an attic</li>
-                <li>On a bookshelf covered with books</li>
-                <li>Outside, exposed to the elements</li>
-            </ul>
-        </li>
-    </ol>
-    <p>If you have a Smart Panel in your home/office and would like to utilize your existing home wiring or WiFi access points, it will be best to have your router located at the Smart Panel. Please refer to your Smart Home specialist or IT consultant with any questions as Global Net does not support, nor is responsible for, any internal networking configurations.</p>
-    <p>Global Net and Yellowstone Fiber do not service or support the LAN side of your internet service. Customer-owned devices like your router, phones, computers, gaming consoles, IOT, and TV’s are not supported by either company. These will be the responsibility of the customer to troubleshoot and maintain.</p>
-    <p>After the installation of the Yellowstone Fiber ONT is complete <strong>BILLING WILL START</strong>. If&nbsp;your router is available at the install, the installer will&nbsp;connect it&nbsp;to the ONT and&nbsp;will&nbsp;confirm you have internet access.</p>
-    <br>
-    <p><strong>BILLING INFORMATION</strong></p>
-    <br>
-    <p>Once your service is activated you will need to call Global Net Billing at 406-587-5095, Option 3.&nbsp; Our Customer Service Reps will set up auto billing on a credit or debit card. You can also use this link to the Global Net Customer portal to upload your billing information <a href="https://customer.theglobal.net/">HERE</a>.</p>
-    <p>There is a 10 day grace period after activation.&nbsp; After 10 days without payment, service will be interrupted.</p>
-    <p>Your payment to Yellowstone Fiber is $30 per month but will be billed and collected by Global Net with our bill for internet service.&nbsp;<br></p>
-    <p>Please let us know if you have any questions and we look forward to bringing you online soon!</p>
-    <br>
-    <p>Sincerely,<br>Global Net Fiber Support</p>
-    """
+    # Path to the folder and the description file
+    folder_path = 'ticket_descriptions'
+    description_file = os.path.join(folder_path, 'new_desc.txt')
+
+    # Create the folder if it doesn't exist
+    os.makedirs(folder_path, exist_ok=True)
+
+    # Read the description from the text file
+    with open(description_file, 'r') as file:
+        new_desc = file.read()
+
+    # Replace placeholders with dynamic values
+    new_desc = new_desc.replace("{customer_name}", customer_name)
 
     # print(customer_id)
     ticket_data = {
@@ -186,9 +148,9 @@ def create_powercode_ticket(customer_id, customer_name=""):
 
     print(PC_response.json())
 
-    ticketID = PC_response.json()['ticketID']
+    ticket_id = PC_response.json().get('ticketID', None)
 
-    return ticketID
+    return ticket_id
 
 def read_powercode_ticket(ticket_id):
     ticket_data = {
