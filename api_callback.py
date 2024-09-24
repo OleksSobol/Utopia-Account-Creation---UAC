@@ -59,6 +59,12 @@ class UtopiaAPIHandler:
         # search cust in Utopia/Powercode and create customer in Powercode
         if msg == "Project New Order":
             self.handle_new_order(orderref)
+        elif msg == "Test":
+            self.send_email(
+                f"Test this shit out",
+                f'Powercode id: Not existing in this universe'
+            )
+
         else:
             logging.warning("No methods to handle that yet!")
 
