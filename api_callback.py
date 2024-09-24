@@ -239,7 +239,7 @@ class UtopiaAPIHandler:
         }
 
     def run(self):
-        self.app.run(host='0.0.0.0', port=5060)
+        self.app.run(host='0.0.0.0', port=5050)
 
 
 if __name__ == "__main__":
