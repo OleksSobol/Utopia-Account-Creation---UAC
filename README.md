@@ -60,7 +60,30 @@ All API events and errors are logged to api_class.log for audit and troubleshoot
 ## Error Handling
 If there are errors in customer creation or service plan assignment, an email will be sent to the recipients specified with details of the issue.
 
-javascript
-Copy code
+## Editing Ticket Description & Deploying Changes
 
-This can be directly used as a `README.md` file in your project.
+This guide will walk you through the process of editing the ticket description and deploying changes to the system.
+
+### Steps:
+
+#### 1. **Edit the Ticket Description on GitHub**
+1. Navigate to the `ticket_descriptions` folder.
+2. Edit the `new_desc.txt` file as needed.
+3. Commit and push the changes to the repository.
+
+#### 2. **Deploy the Changes on the Server**
+
+After editing the ticket description, you need to pull the changes to the server and restart the service.
+
+##### Steps to deploy:
+
+1. **SSH into the server:**
+   ```bash
+   ssh your-username@your-server-ip
+
+2. **Simply run deploy_changes_UAC.sh:**
+   ```bash
+   ./deploy_changes_UAC.sh
+The output should indicate that the service is running. If there are any issues, review the logs for troubleshooting.
+
+
