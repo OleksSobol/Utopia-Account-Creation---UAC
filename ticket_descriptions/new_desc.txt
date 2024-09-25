@@ -37,7 +37,7 @@
     </ol>
     <p>If you have a Smart Panel in your home/office and would like to utilize your existing home wiring or WiFi access points, it will be best to have your router located at the Smart Panel. Please refer to your Smart Home specialist or IT consultant with any questions as Global Net does not support, nor is responsible for, any internal networking configurations.</p>
     <p>Global Net and Yellowstone Fiber do not service or support the LAN side of your internet service. Customer-owned devices like your router, phones, computers, gaming consoles, IOT, and TV’s are not supported by either company. These will be the responsibility of the customer to troubleshoot and maintain.</p>
-    <p>After the installation of the Yellowstone Fiber ONT is complete <strong>BILLING WILL START</strong>. If&nbsp;your router is available at the install, the installer will&nbsp;connect it&nbsp;to the ONT and&nbsp;will&nbsp;confirm you have internet access.</p>
+    <p>After the installation of the Yellowstone Fiber ONT is complete <strong>BILLING WILL START</strong>.  If&nbsp;your router is available at the install, the installer will&nbsp;connect it&nbsp;to the ONT and&nbsp;will&nbsp;confirm you have internet access.</p>
     <br>
     <p><strong>BILLING INFORMATION</strong></p>
     <br>
