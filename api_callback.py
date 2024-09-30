@@ -147,15 +147,15 @@ class UtopiaAPIHandler:
             logging.info(f"Utopia service added: {service_plan_respond_utopia}")
 
             # Step 3: Add an additional plan manually (if needed)
-            # additional_plan = "Bond fee"  # Example, this can be dynamic based on the customer or logic
-            # service_id_additional = additional_service_plan_mapping.get(additional_plan, None)
-            #
-            # if service_id_additional:
-            #     service_plan_respond_additional = PowerCode.add_customer_service_plan(
-            #         customer_id,
-            #         service_id_additional
-            #     )
-            #     logging.info(f"Additional service added: {service_plan_respond_additional}")
+            additional_plan = "Bond fee"  # Example, this can be dynamic based on the customer or logic
+            service_id_additional = additional_service_plan_mapping.get(additional_plan, None)
+
+            if service_id_additional:
+                service_plan_respond_additional = PowerCode.add_customer_service_plan(
+                    customer_id,
+                    service_id_additional
+                )
+                logging.info(f"Additional service added: {service_plan_respond_additional}")
 
             # Create ticket
             PowerCode.create_powercode_ticket(customer_id, customer_to_powercode["firstname"])
