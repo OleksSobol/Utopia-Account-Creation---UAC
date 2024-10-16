@@ -70,7 +70,12 @@ class UtopiaAPIHandler:
 
     def handle_new_order(self, orderref):
         logging.info(f"Searching for customer - {orderref}")
+
         customer_from_utopia = Utopia.getCustomerFromUtopia(orderref)
+        # Extract Utopia customer info
+        utopia_name = customer_from_utopia['billingaddress']['name']
+        utopia_city = customer_from_utopia['billingaddress']['city']
+
         logging.info(f"Response from Utopia: {customer_from_utopia}")
 
         if customer_from_utopia != "Error":
@@ -79,7 +84,18 @@ class UtopiaAPIHandler:
             customers_list = PowerCode.search_powercode_customers(customer_first_last_name)["customers"]
             logging.info(customers_list)
 
-            if customers_list:
+            # Try to find a match by comparing names
+            matching_customer = None
+
+            for customer in customers_list:
+                pc_name = customer.get("CompanyName", "")
+                pc_city = customer.get("City", "")
+                if pc_name == utopia_name and pc_city == utopia_city:
+                    matching_customer = customer
+                    break
+
+            # check by name if customer exist in Powercode.
+            if matching_customer:
                 logging.info(f"Customer exist, doing nothing... {customers_list}")
 
                 customer_to_powercode = self.format_contact_info(self.customer_to_pc(customer_from_utopia, orderref))
@@ -110,7 +126,7 @@ class UtopiaAPIHandler:
         if customer_id == -1:
             self.send_email(
                 f"Failed to create customer: {customer_from_utopia}",
-                f'Check Powercode Logs. \n{formatted_customer_to_powercode}',
+                f'Check Powercode Logs, because API returns -1 when something wrong. \n{formatted_customer_to_powercode}',
                 orderref
             )
         else:
