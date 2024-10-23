@@ -26,6 +26,7 @@ def create_powercode_account(url, api_key, customer_info, customer_portal_passwo
         "physicalAutomaticallyGeocode": 1,
         "billingSameAsPhysical": 1,
         "taxZoneId": 1,
+        "invoicePreference": "Email",
         "billDay": "Activation Date",
         "dueByDays": 0,
         "gracePeriodDays": 10,
