@@ -114,6 +114,8 @@ class UtopiaAPIHandler:
         customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
         formatted_customer_to_powercode = self.format_contact_info(self.customer_to_pc(customer_from_utopia, orderref))
         logging.info("Utopia:", customer_from_utopia)
+        customer_first_last_name = (
+                    customer_from_utopia["customer"]["firstname"] + " " + customer_from_utopia["customer"]["lastname"])
 
         customer_id = PowerCode.create_powercode_account(
             static_vars.PC_URL,
@@ -178,7 +180,7 @@ class UtopiaAPIHandler:
 
             # Send Email
             self.send_email(
-                f"Customer created - Powercode#{customer_id}",
+                f"Customer created - {customer_first_last_name} PC#{customer_id}",
                 f'Powercode id: https://management.theglobal.net:444/index.php?q&page=/customers/_view.php&customerid={customer_id} \n{formatted_customer_to_powercode}',
                 orderref
             )
