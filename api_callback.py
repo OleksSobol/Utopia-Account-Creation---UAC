@@ -3,7 +3,7 @@ import logging
 import os
 import requests
 import urllib3
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_mail import Mail, Message
 
 import powercode as PowerCode
@@ -39,21 +39,32 @@ class UtopiaAPIHandler:
         return 'This is only for Utopia API'
 
     def api_callback(self):
-        request_data = request.get_json()
         logging.basicConfig(filename=LOG_FILE, format='%(asctime)s - %(message)s', level=logging.INFO)
+
+        # Check if reeuest has JSON data
+        if not request.is_json:
+            logging.error("No JSON payload provided")
+            return jsonify({"error": "Invalid or missing JSON payload"}), 400
+
+        request_data = request.get_json()
         logging.info(request_data)
 
         try:
             event = request_data['event']
             orderref = request_data['orderref']
             msg = request_data["msg"]
+
+            if not event or not orderref or not msg:
+                raise ValueError("Missing required fields in JSON payload")
+
             self.handle_information_from_post(event, orderref, msg)
             response = {"data": "Information received"}
         except Exception as e:
             logging.error(f"Error processing API callback: {str(e)}")
             response = {"error": "Error processing API callback"}
+            return jsonify(response), 400
 
-        return response
+        return jsonify(response), 200
 
     def handle_information_from_post(self, event, orderref, msg):
         # search cust in Utopia/Powercode and create customer in Powercode
