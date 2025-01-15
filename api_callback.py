@@ -72,8 +72,8 @@ class UtopiaAPIHandler:
             self.handle_new_order(orderref)
         elif msg == "Test":
             self.send_email(
-                f"Test this shit out",
-                f'Powercode id: Not existing in this universe'
+                f"This is just a test",
+                f'Please ignore it!'
             )
 
         else:
