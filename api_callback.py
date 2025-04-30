@@ -18,7 +18,7 @@ urllib3.disable_warnings()
 MAIL_SERVER = 'theglobal-net.mail.protection.outlook.com'
 MAIL_PORT = 25
 EMAIL_SENDER = 'no-reply@theglobal.net'
-EMAIL_RECIPIENTS = ['osobol@theglobal.net', 'amolenda@theglobal.net', 'mbuonocore@theglobal.net']
+EMAIL_RECIPIENTS = ['osobol@theglobal.net', 'amolenda@theglobal.net', 'mbuonocore@theglobal.net', 'frontdesk@theglobal.net']
 LOG_FILE = 'api_class.log'
 
 
