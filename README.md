@@ -104,8 +104,12 @@ Once your changes are pushed, deploy them to the server.
 
 ##### Steps to deploy:
 
+##### Steps to deploy:
+
 1. **SSH into the server:**
    ```bash
    ssh your-username@your-server-ip
 
-
+2. **Simply run deploy_changes_UAC.sh:**
+   ```bash
+   ./deploy_changes_UAC.sh
