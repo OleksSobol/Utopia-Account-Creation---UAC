@@ -87,3 +87,25 @@ After editing the ticket description, you need to pull the changes to the server
 The output should indicate that the service is running. If there are any issues, review the logs for troubleshooting.
 
 
+## Editing Constants & Deploying Changes
+
+This guide explains how to update constants like emails, server names, or log file paths, and how to deploy those changes to the system.
+
+### Steps:
+
+#### 1. **Edit the Constants on GitHub**
+1. Navigate to the repository and open `api_callback.py`.
+2. Find and edit the relevant constants (e.g., `EMAIL_RECIPIENT`, `LOG_FILENAME`, `SERVER_IP`, etc.).
+3. Commit and push your changes to the repository.
+
+#### 2. **Deploy the Changes on the Server**
+
+Once your changes are pushed, deploy them to the server.
+
+##### Steps to deploy:
+
+1. **SSH into the server:**
+   ```bash
+   ssh your-username@your-server-ip
+
+
