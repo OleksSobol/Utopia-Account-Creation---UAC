@@ -18,9 +18,9 @@ urllib3.disable_warnings()
 MAIL_SERVER = 'theglobal-net.mail.protection.outlook.com'
 MAIL_PORT = 25
 EMAIL_SENDER = 'no-reply@theglobal.net'
-# EMAIL_RECIPIENTS = ['osobol@theglobal.net', 'amolenda@theglobal.net', 'mbuonocore@theglobal.net', 'frontdesk@theglobal.net']
 EMAIL_RECIPIENTS = ['amolenda@theglobal.net', 'mbuonocore@theglobal.net', 'frontdesk@theglobal.net']
 LOG_FILE = 'api_class.log'
+CUSTOMER_PORTAL_PASSWORD = "WelcomeToGlobalNet"
 
 
 class UtopiaAPIHandler:
@@ -133,7 +133,7 @@ class UtopiaAPIHandler:
             static_vars.PC_URL,
             config.PC_API_KEY,
             customer_to_powercode,
-            customer_portal_password="WelcomeToGlobalNet"
+            customer_portal_password=CUSTOMER_PORTAL_PASSWORD
         )
         logging.info(customer_id)
 
