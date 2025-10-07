@@ -1,15 +1,11 @@
-# test PC cread
-# admin - No0leks
+# Static variables for the Utopia Account Creation project
 
-
-################## Powercode
-#Real PC API
+#  Powercode
 PC_URL = "https://management.theglobal.net"
 PC_URL_Ticket = "https://management.theglobal.net:444/api/1/index.php"
 PC_addressRangev4 = 10228
 
-################# Utopia
-
+# Utopia
 # Utopia API main endpoint
 URL_ENDPOINT = "https://api.utopiafiber.com"
 
@@ -21,5 +17,10 @@ UTOPIA_Contract_Lookup = '/spquery/contractlookup'
 UTOPIA_Contract_Download = '/spquery/contractdownload'
 UTOPIA_APView = "/spquery/apview"
 
-# API key for Auth at Utopia
-
+# Constants
+MAIL_SERVER = 'theglobal-net.mail.protection.outlook.com'
+MAIL_PORT = 25
+EMAIL_SENDER = 'no-reply@theglobal.net'
+EMAIL_RECIPIENTS = ['amolenda@theglobal.net', 'mbuonocore@theglobal.net', 'frontdesk@theglobal.net']
+LOG_FILE = 'api_class.log'
+CUSTOMER_PORTAL_PASSWORD = "WelcomeToGlobalNet"

@@ -8,19 +8,12 @@ from flask_mail import Mail, Message
 
 import powercode as PowerCode
 import utopia as Utopia
-import static_vars
 import config
+
+from static_vars import *
 
 # Disable warnings
 urllib3.disable_warnings()
-
-# Constants
-MAIL_SERVER = 'theglobal-net.mail.protection.outlook.com'
-MAIL_PORT = 25
-EMAIL_SENDER = 'no-reply@theglobal.net'
-EMAIL_RECIPIENTS = ['amolenda@theglobal.net', 'mbuonocore@theglobal.net', 'frontdesk@theglobal.net']
-LOG_FILE = 'api_class.log'
-CUSTOMER_PORTAL_PASSWORD = "WelcomeToGlobalNet"
 
 
 class UtopiaAPIHandler:
@@ -129,8 +122,9 @@ class UtopiaAPIHandler:
         customer_first_last_name = (
                     customer_from_utopia["customer"]["firstname"] + " " + customer_from_utopia["customer"]["lastname"])
 
+        # TODO - Update customer notes with termsagreement | Agreed to Service Provider Terms: "insert date/time stamp" during creation
         customer_id = PowerCode.create_powercode_account(
-            static_vars.PC_URL,
+            PC_URL,
             config.PC_API_KEY,
             customer_to_powercode,
             customer_portal_password=CUSTOMER_PORTAL_PASSWORD
@@ -176,8 +170,8 @@ class UtopiaAPIHandler:
 
             logging.info(f"Utopia service added: {service_plan_respond_utopia}")
 
-            # Step 3: Add an additional plan manually (if needed)
-            additional_plan = "Bond fee"  # Example, this can be dynamic based on the customer or logic
+            # Step 3: Add an additional plan manually
+            additional_plan = "Bond fee" 
             service_id_additional = additional_service_plan_mapping.get(additional_plan, None)
 
             if service_id_additional:
