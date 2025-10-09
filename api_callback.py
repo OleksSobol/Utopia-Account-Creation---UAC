@@ -45,15 +45,13 @@ class UtopiaAPIHandler:
         return 'This is only for Utopia API'
 
     def api_callback(self):
-        logging.basicConfig(filename=LOG_FILE, format='%(asctime)s - %(message)s', level=logging.INFO)
-
         # Check if reeuest has JSON data
         if not request.is_json:
-            logging.error("No JSON payload provided")
+            logger.error("No JSON payload provided")
             return jsonify({"error": "Invalid or missing JSON payload"}), 400
 
         request_data = request.get_json()
-        logging.info(request_data)
+        logger.info(request_data)
 
         try:
             event = request_data['event']
@@ -66,7 +64,7 @@ class UtopiaAPIHandler:
             self.handle_information_from_post(event, orderref, msg)
             response = {"data": "Information received"}
         except Exception as e:
-            logging.error(f"Error processing API callback: {str(e)}")
+            logger.error(f"Error processing API callback: {str(e)}")
             response = {"error": "Error processing API callback"}
             return jsonify(response), 400
 
@@ -83,23 +81,23 @@ class UtopiaAPIHandler:
             )
 
         else:
-            logging.warning("No methods to handle that yet!")
+            logger.warning("No methods to handle that yet!")
 
     def handle_new_order(self, orderref):
-        logging.info(f"Searching for customer - {orderref}")
+        logger.info(f"Searching for customer - {orderref}")
 
         customer_from_utopia = Utopia.getCustomerFromUtopia(orderref)
         # Extract Utopia customer info
         utopia_name = customer_from_utopia['billingaddress']['name']
         utopia_city = customer_from_utopia['billingaddress']['city']
 
-        logging.info(f"Response from Utopia: {customer_from_utopia}")
+        logger.info(f"Response from Utopia: {customer_from_utopia}")
 
         if customer_from_utopia != "Error":
-            logging.info("Search in PC")
+            logger.info("Search in PC")
             customer_first_last_name = (customer_from_utopia["customer"]["firstname"] + " " + customer_from_utopia["customer"]["lastname"])
             customers_list = PowerCode.search_powercode_customers(customer_first_last_name)["customers"]
-            logging.info(customers_list)
+            logger.info(customers_list)
 
             # Try to find a match by comparing names
             matching_customer = None
@@ -113,7 +111,7 @@ class UtopiaAPIHandler:
 
             # check by name if customer exist in Powercode.
             if matching_customer:
-                logging.info(f"Customer exist, doing nothing... {customers_list}")
+                logger.info(f"Customer exist, doing nothing... {customers_list}")
 
                 customer_to_powercode = self.format_contact_info(self.customer_to_pc(customer_from_utopia, orderref))
                 self.send_email(
@@ -124,13 +122,13 @@ class UtopiaAPIHandler:
             else:
                 self.create_new_customer(customer_from_utopia, orderref)
         else:
-            logging.info("No customer found")
+            logger.info("No customer found")
 
     def create_new_customer(self, customer_from_utopia, orderref):
-        logging.warning(f"Creating customer in PC: {customer_from_utopia}")
+        logger.warning(f"Creating customer in PC: {customer_from_utopia}")
         customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
         formatted_customer_to_powercode = self.format_contact_info(self.customer_to_pc(customer_from_utopia, orderref))
-        logging.info("Utopia:", customer_from_utopia)
+        logger.info("Utopia:", customer_from_utopia)
         customer_first_last_name = (
                     customer_from_utopia["customer"]["firstname"] + " " + customer_from_utopia["customer"]["lastname"])
 
@@ -141,7 +139,7 @@ class UtopiaAPIHandler:
             customer_to_powercode,
             customer_portal_password=CUSTOMER_PORTAL_PASSWORD
         )
-        logging.info(customer_id)
+        logger.info(customer_id)
 
         if customer_id == -1:
             self.send_email(
@@ -180,7 +178,7 @@ class UtopiaAPIHandler:
                 service_id_utopia
             )
 
-            logging.info(f"Utopia service added: {service_plan_respond_utopia}")
+            logger.info(f"Utopia service added: {service_plan_respond_utopia}")
 
             # Step 3: Add an additional plan manually
             additional_plan = "Bond fee" 
@@ -191,7 +189,7 @@ class UtopiaAPIHandler:
                     customer_id,
                     service_id_additional
                 )
-                logging.info(f"Additional service added: {service_plan_respond_additional}")
+                logger.info(f"Additional service added: {service_plan_respond_additional}")
 
             # Create ticket
             PowerCode.create_powercode_ticket(customer_id, customer_to_powercode["firstname"])
@@ -203,7 +201,7 @@ class UtopiaAPIHandler:
                 orderref
             )
 
-            logging.info(
+            logger.info(
                 f"Customer created - Powercode: {customer_id}, Utopia siteID: {customer_from_utopia['address']['siteid']}")
 
 
@@ -225,18 +223,18 @@ class UtopiaAPIHandler:
                             f"{order_ref}.pdf",
                             "application/pdf",
                             attachment.read())
-                        logging.info(f"Attached PDF contract for: {order_ref}")
+                        logger.info(f"Attached PDF contract for: {order_ref}")
             self.mail.send(msg)
-            logging.info(f"Email sent successfully: {msg_subject}")
+            logger.info(f"Email sent successfully: {msg_subject}")
 
             # Delete PDF contract after email sent
             if attachment_path:
                 os.remove(attachment_path)
-                logging.info(f"Delete PDF contract: {attachment_path}")
+                logger.info(f"Delete PDF contract: {attachment_path}")
 
             return "Email sent!"
         except Exception as e:
-            logging.error(f"Error sending email: {msg_subject}. Error: {str(e)}")
+            logger.error(f"Error sending email: {msg_subject}. Error: {str(e)}")
             return f"Error sending email: {msg_subject}"
 
 
@@ -247,10 +245,10 @@ class UtopiaAPIHandler:
             file_path = f"contracts/{order_ref}.pdf"
             with open(file_path, "wb") as f:
                 f.write(pdf_content)
-                logging.info(f"PDF file downloaded successfully for: {order_ref}")
+                logger.info(f"PDF file downloaded successfully for: {order_ref}")
                 return file_path
         else:
-            logging.error("Failed to download PDF file.")
+            logger.error("Failed to download PDF file.")
             return None
 
 
