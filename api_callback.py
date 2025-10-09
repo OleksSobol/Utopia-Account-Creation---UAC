@@ -12,8 +12,20 @@ import config
 
 from static_vars import *
 
-# Disable warnings
-urllib3.disable_warnings()
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_FILE),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+
+# Only disable specific warnings, not all
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class UtopiaAPIHandler:
