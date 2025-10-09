@@ -122,7 +122,7 @@ class UtopiaAPIHandler:
         customer_first_last_name = (
                     customer_from_utopia["customer"]["firstname"] + " " + customer_from_utopia["customer"]["lastname"])
 
-        # TODO - Update customer notes with termsagreement | Agreed to Service Provider Terms: "insert date/time stamp" during creation
+        # TODO DEV-12 - Update customer notes with termsagreement | Agreed to Service Provider Terms: "insert date/time stamp" during creation
         customer_id = PowerCode.create_powercode_account(
             PC_URL,
             config.PC_API_KEY,
