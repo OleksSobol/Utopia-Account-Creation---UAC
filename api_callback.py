@@ -191,11 +191,10 @@ class UtopiaAPIHandler:
                 )
                 logger.info(f"Additional service added: {service_plan_respond_additional}")
 
-            # Create ticket
-            PowerCode.create_powercode_ticket(customer_id, customer_to_powercode["firstname"])
-            
-            # create log entry for ticket
+            # Create PowerCode Ticket & log response to a variable
             ticket_creation_response_pc = PowerCode.create_powercode_ticket(customer_id, customer_to_powercode["firstname"])
+            
+            # Log entry for PowerCode ticket creation
             logger.info(f'Ticket: {ticket_creation_response_pc}, created in PowerCode')
             
             
@@ -221,6 +220,7 @@ class UtopiaAPIHandler:
             )
 
             attachment_path = None
+            """
             if order_ref:
                 attachment_path = self.attach_contract_to_email(order_ref)
                 if attachment_path:
@@ -237,13 +237,15 @@ class UtopiaAPIHandler:
             if attachment_path:
                 os.remove(attachment_path)
                 logger.info(f"Delete PDF contract: {attachment_path}")
-
+            """
             return "Email sent!"
         except Exception as e:
             logger.error(f"Error sending email: {msg_subject}. Error: {str(e)}")
             return f"Error sending email: {msg_subject}"
 
-
+    """
+    #contracts no longer used
+    
     def attach_contract_to_email(self, order_ref):
         pdf_content = Utopia.download_contract_pdf(order_ref)
         if pdf_content:
@@ -256,6 +258,8 @@ class UtopiaAPIHandler:
         else:
             logger.error("Failed to download PDF file.")
             return None
+            
+    """
 
 
     def format_contact_info(self, contact_info):
