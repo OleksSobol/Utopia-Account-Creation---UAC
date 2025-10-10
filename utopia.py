@@ -61,66 +61,6 @@ def getCustomerService(siteid):
         APView_full = response.json()
     return APView_full
 
-
-# Download contract PDF document. If the document is ready for download, the PDF data is sent. If it is not ready,
-# a json response is sent.
-def getContractDownload(orderref):
-    JSON_REQUEST = {
-        "apikey": config.UTOPIA_API_KEY,
-        "orderref": orderref,
-    }
-
-    response = requests.post(static_vars.URL_ENDPOINT + static_vars.UTOPIA_Contract_Download,
-                             data=json.dumps(JSON_REQUEST))
-    APView_full = response.json()
-
-    return APView_full
-
-def download_contract_pdf(orderref):
-    """
-    Download contract PDF document.
-    If the document is ready for download, the PDF data is sent.
-    If it is not ready,a json response is sent.
-
-    """
-    json_request = {
-        "apikey": config.UTOPIA_API_KEY,
-        "orderref": orderref,
-    }
-
-    # API endpoint URL
-    url = "https://api.utopiafiber.dev/spquery/contractdownload"
-
-    try:
-        response = requests.post(static_vars.URL_ENDPOINT + static_vars.UTOPIA_Contract_Download,
-                             data=json.dumps(json_request))
-        # Check if the request was successful (status code 200)
-        if response.status_code == 200:
-            # Check the content type of the response
-            content_type = response.headers.get('content-type')
-            if content_type == 'application/pdf; charset=UTF-8':
-                # PDF file is ready for download, return the content
-                return response.content
-            else:
-                # Unexpected response content type
-                print("Unexpected response content type:", content_type)
-                return None
-        elif response.status_code == 404:
-            # Order not found or no valid records found for the ISP
-            error_message = response.json().get("error", "Unknown error")
-            print("Error:", error_message)
-            return None
-
-        else:
-            # Unexpected status code
-            print("Unexpected status code:", response.status_code)
-            return None
-
-    except requests.RequestException as e:
-        # Handle HTTP request exceptions
-        print("HTTP request failed:", e)
-        return None
-
 #Custom function
 def printCustomerInfo(data):
     customer = {
