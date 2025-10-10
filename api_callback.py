@@ -193,6 +193,12 @@ class UtopiaAPIHandler:
 
             # Create ticket
             PowerCode.create_powercode_ticket(customer_id, customer_to_powercode["firstname"])
+            
+            # create log entry for ticket
+            ticket_creation_response_pc = PowerCode.create_powercode_ticket(customer_id, customer_to_powercode["firstname"])
+            logger.info(f'Ticket: {ticket_creation_response_pc}, created in PowerCode')
+            
+            
 
             # Send Email
             self.send_email(
