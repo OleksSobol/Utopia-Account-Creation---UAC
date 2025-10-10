@@ -214,8 +214,9 @@ class UtopiaAPIHandler:
                 body=msg_body
             )
 
-            attachment_path = None
             """
+            attachment_path = None
+
             if order_ref:
                 attachment_path = self.attach_contract_to_email(order_ref)
                 if attachment_path:
@@ -225,9 +226,10 @@ class UtopiaAPIHandler:
                             "application/pdf",
                             attachment.read())
                         logger.info(f"Attached PDF contract for: {order_ref}")
+            """
             self.mail.send(msg)
             logger.info(f"Email sent successfully: {msg_subject}")
-
+            """
             # Delete PDF contract after email sent
             if attachment_path:
                 os.remove(attachment_path)
@@ -237,10 +239,8 @@ class UtopiaAPIHandler:
         except Exception as e:
             logger.error(f"Error sending email: {msg_subject}. Error: {str(e)}")
             return f"Error sending email: {msg_subject}"
-
-    """
-    #contracts no longer used
     
+    """
     def attach_contract_to_email(self, order_ref):
         pdf_content = Utopia.download_contract_pdf(order_ref)
         if pdf_content:
@@ -253,9 +253,7 @@ class UtopiaAPIHandler:
         else:
             logger.error("Failed to download PDF file.")
             return None
-            
     """
-
 
     def format_contact_info(self, contact_info):
         formatted_info = f"Name: {contact_info['firstname']} {contact_info['lastname']}\n"
