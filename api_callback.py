@@ -23,7 +23,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 # Only disable specific warnings, not all
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
