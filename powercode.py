@@ -200,4 +200,3 @@ def read_custom_action(action):
     response = requests.post(static_vars.PC_URL + ":444/api/1/index.php", data=fields, verify=False)
     return response.json()
     
-
