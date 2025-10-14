@@ -197,7 +197,6 @@ class UtopiaAPIHandler:
             # Log entry for PowerCode ticket creation
             logger.info(f'Ticket: {ticket_creation_response_pc}, created in PowerCode')
             
-            
 
             # Send Email
             self.send_email(

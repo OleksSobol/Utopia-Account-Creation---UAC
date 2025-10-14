@@ -147,7 +147,7 @@ def create_powercode_ticket(customer_id, customer_name=""):
     # after ticket created, response will contain ticketID that will be need for reply ticket
     # {'message': 'Ticket created', 'statusCode': 0, 'ticketID': '15'}
 
-    print(PC_response.json())
+    # print(PC_response.json())
 
     ticket_id = PC_response.json().get('ticketID', None)
 
