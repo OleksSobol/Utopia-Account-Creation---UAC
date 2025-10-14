@@ -235,6 +235,7 @@ class UtopiaAPIHandler:
                 os.remove(attachment_path)
                 logger.info(f"Delete PDF contract: {attachment_path}")
             """
+            
             return "Email sent!"
         except Exception as e:
             logger.error(f"Error sending email: {msg_subject}. Error: {str(e)}")
