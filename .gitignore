@@ -169,3 +169,6 @@ pytest.ini
 run_tests*
 TESTING.md
 test handle_new_order.py
+
+contracts/
+utopiaenv/

@@ -235,6 +235,8 @@ class UtopiaAPIHandler:
         formatted_info += f"ZIP: {contact_info['zip']}\n"
         formatted_info += f"Site ID: {contact_info['siteid']}\n"
         formatted_info += f"Order Ref: {contact_info['orderref']}"
+        formatted_info += f"Agreed to Service Provider Terms: {contact_info['sp_terms_agree_date']}"
+
         return formatted_info
 
     def customer_to_pc(self, customer_from_utopia, orderref):
@@ -250,6 +252,8 @@ class UtopiaAPIHandler:
             "zip": customer_from_utopia["address"]["zip"],
             "siteid": customer_from_utopia["address"]["siteid"],
             "orderref": orderref,
+            "sp_terms_agree_date" :customer_from_utopia['termsagreement']['sp_terms_agree_date']
+
         }
 
     def run(self):
