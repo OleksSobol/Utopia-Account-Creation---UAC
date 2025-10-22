@@ -13,6 +13,13 @@ def create_powercode_account(url, api_key, customer_info, customer_portal_passwo
     if customer_info['state'] == "Montana":
         customer_info['state'] = "MT"
 
+
+    notes = (
+        f"Order# {customer_info.get('orderref', '')}\n"
+        f"Utopia SiteID: {customer_info.get('siteid', '')}\n"
+        f"Agreed to Service Provider Terms: {customer_info.get('sp_terms_agree_date', '')}"
+    )
+
     account_data = {
         'apiKey': api_key,
         'action': 'createCustomer',
@@ -30,12 +37,7 @@ def create_powercode_account(url, api_key, customer_info, customer_portal_passwo
         "billDay": "Activation Date",
         "dueByDays": 0,
         "gracePeriodDays": 10,
-        "customerNotes": 
-        (
-            'Order# ' + str(customer_info.get('orderref', '')) +
-            "\nUtopia SiteID: " + str(customer_info.get('siteid', '')) +
-            "\nAgreed to Service Provider Terms: " + str(customer_info.get('sp_terms_agree_date', ''))
-        ),
+        "customerNotes": notes,
         "customerPortalUsername": customer_info['email'],
         "customerPortalPassword": customer_portal_password,
         "phone": json.dumps([
