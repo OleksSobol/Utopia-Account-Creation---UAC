@@ -250,8 +250,8 @@ class UtopiaAPIHandler:
         formatted_info += f"State: {contact_info['state']}\n"
         formatted_info += f"ZIP: {contact_info['zip']}\n"
         formatted_info += f"Site ID: {contact_info['siteid']}\n"
-        formatted_info += f"Order Ref: {contact_info['orderref']}"
-        formatted_info += f"Agreed to Service Provider Terms: {contact_info['sp_terms_agree_date']}"
+        formatted_info += f"Order Ref: {contact_info['orderref']}\n"
+        formatted_info += f"Agreed to Service Provider Terms: {contact_info['sp_terms_agree_date']}\n"
 
         return formatted_info
 
