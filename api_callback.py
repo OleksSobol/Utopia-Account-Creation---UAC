@@ -44,26 +44,35 @@ class UtopiaAPIHandler:
         return 'This is only for Utopia API'
 
     def api_callback(self):
-        # Check if reeuest has JSON data
+    # Check if request has JSON data
         if not request.is_json:
             logger.error("No JSON payload provided")
             return jsonify({"error": "Invalid or missing JSON payload"}), 400
 
         request_data = request.get_json()
-        logger.info(request_data)
+        logger.info(f"Received request data: {request_data}")  # Log the full payload
 
         try:
-            event = request_data['event']
-            orderref = request_data['orderref']
-            msg = request_data["msg"]
+            # Safely extract fields with .get()
+            event = request_data.get('event')
+            orderref = request_data.get('orderref')
+            msg = request_data.get('msg')
 
+            # Check if any required fields are missing or empty
             if not event or not orderref or not msg:
+                logger.error(f"Missing required fields - event: {event}, orderref: {orderref}, msg: {msg}")
                 raise ValueError("Missing required fields in JSON payload")
 
+            logger.info(f"Processing - event: {event}, orderref: {orderref}, msg: {msg}")
+            
             self.handle_information_from_post(event, orderref, msg)
             response = {"data": "Information received"}
+        except KeyError as e:
+            logger.error(f"Missing key in JSON payload: {str(e)}")
+            response = {"error": f"Missing required field: {str(e)}"}
+            return jsonify(response), 400
         except Exception as e:
-            logger.error(f"Error processing API callback: {str(e)}")
+            logger.error(f"Error processing API callback: {str(e)}", exc_info=True)  # exc_info adds stack trace
             response = {"error": "Error processing API callback"}
             return jsonify(response), 400
 
@@ -87,14 +96,19 @@ class UtopiaAPIHandler:
 
         customer_from_utopia = Utopia.getCustomerFromUtopia(orderref)
         # Extract Utopia customer info
-        utopia_name = customer_from_utopia['billingaddress']['name']
-        utopia_city = customer_from_utopia['billingaddress']['city']
+        # Extract with safety checks
+        utopia_name = customer_from_utopia.get('billingaddress', {}).get('name', '')
+        utopia_city = customer_from_utopia.get('billingaddress', {}).get('city', '')
 
         logger.info(f"Response from Utopia: {customer_from_utopia}")
 
         if customer_from_utopia != "Error":
-            logger.info("Search in PC")
-            customer_first_last_name = (customer_from_utopia["customer"]["firstname"] + " " + customer_from_utopia["customer"]["lastname"])
+            logger.info("Searching in PC...")
+
+            firstname = customer_from_utopia.get("customer", {}).get("firstname", "")
+            lastname = customer_from_utopia.get("customer", {}).get("lastname", "")
+            customer_first_last_name = f"{firstname} {lastname}".strip()
+
             customers_list = PowerCode.search_powercode_customers(customer_first_last_name)["customers"]
             logger.info(customers_list)
 
@@ -253,7 +267,22 @@ class UtopiaAPIHandler:
             "siteid": customer_from_utopia["address"]["siteid"],
             "orderref": orderref,
             "sp_terms_agree_date" :customer_from_utopia['termsagreement']['sp_terms_agree_date']
-
+        }
+    
+    def customer_to_pc(self, customer_from_utopia, orderref):
+        return {
+            "firstname": customer_from_utopia["customer"].get("firstname", ""),
+            "lastname": customer_from_utopia["customer"].get("lastname", ""),
+            "email": customer_from_utopia["customer"].get("email", ""),
+            "phone": customer_from_utopia["customer"].get("phone", ""),
+            "address": customer_from_utopia["address"].get("address", ""),
+            "city": customer_from_utopia["address"].get("city", ""),
+            "apt": customer_from_utopia["address"].get("city", ""),
+            "state": customer_from_utopia["address"].get("state", ""),
+            "zip": customer_from_utopia["address"].get("zip", ""),
+            "siteid": customer_from_utopia["address"].get("siteid", ""),
+            "orderref": orderref,
+            "sp_terms_agree_date": customer_from_utopia.get('termsagreement', {}).get('sp_terms_agree_date', "")
         }
 
     def run(self):
