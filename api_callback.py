@@ -138,14 +138,16 @@ class UtopiaAPIHandler:
             logger.info("No customer found")
 
     def create_new_customer(self, customer_from_utopia, orderref):
-        logger.warning(f"Creating customer in PC: {customer_from_utopia}")
         customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
         formatted_customer_to_powercode = self.format_contact_info(self.customer_to_pc(customer_from_utopia, orderref))
+        
+        logger.warning(f"Creating customer in PC with data: {formatted_customer_to_powercode}")
+
         logger.info("Utopia:", customer_from_utopia)
         customer_first_last_name = (
                     customer_from_utopia["customer"]["firstname"] + " " + customer_from_utopia["customer"]["lastname"])
 
-        # TODO DEV-12 - Update customer notes with termsagreement | Agreed to Service Provider Terms: "insert date/time stamp" during creation
+        logger.info(f"Creating Powercode account for orderref={orderref}")
         customer_id = PowerCode.create_powercode_account(
             PC_URL,
             config.PC_API_KEY,
