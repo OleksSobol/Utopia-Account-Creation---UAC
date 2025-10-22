@@ -125,8 +125,8 @@ class UtopiaAPIHandler:
             # check by name if customer exist in Powercode.
             if matching_customer:
                 logger.info(f"Customer exist, doing nothing... {customers_list}")
+                customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
 
-                customer_to_powercode = self.format_contact_info(self.customer_to_pc(customer_from_utopia, orderref))
                 self.send_email(
                     f"Failed to create customer: Customer exist, Powercode ID {customers_list[0]['CustomerID']}",
                     f'{customer_to_powercode}',
@@ -139,7 +139,7 @@ class UtopiaAPIHandler:
 
     def create_new_customer(self, customer_from_utopia, orderref):
         customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
-        formatted_customer_to_powercode = self.format_contact_info(self.customer_to_pc(customer_from_utopia, orderref))
+        formatted_customer_to_powercode = self.format_contact_info(customer_to_powercode)
         
         logger.warning(f"Creating customer in PC with data: \n{formatted_customer_to_powercode}")
 
@@ -241,35 +241,6 @@ class UtopiaAPIHandler:
             logger.error(f"Error sending email: {msg_subject}. Error: {str(e)}")
             return f"Error sending email: {msg_subject}"
 
-    def format_contact_info(self, contact_info):
-        formatted_info = f"Name: {contact_info['firstname']} {contact_info['lastname']}\n"
-        formatted_info += f"Email: {contact_info['email']}\n"
-        formatted_info += f"Phone: {contact_info['phone']}\n"
-        formatted_info += f"Address: {contact_info['address']}\n"
-        formatted_info += f"City: {contact_info['city']}\n"
-        formatted_info += f"State: {contact_info['state']}\n"
-        formatted_info += f"ZIP: {contact_info['zip']}\n"
-        formatted_info += f"Site ID: {contact_info['siteid']}\n"
-        formatted_info += f"Order Ref: {contact_info['orderref']}\n"
-        formatted_info += f"Agreed to Service Provider Terms: {contact_info['sp_terms_agree_date']}\n"
-
-        return formatted_info
-
-    # def customer_to_pc(self, customer_from_utopia, orderref):
-    #     return {
-    #         "firstname": customer_from_utopia["customer"]["firstname"],
-    #         "lastname": customer_from_utopia["customer"]["lastname"],
-    #         "email": customer_from_utopia["customer"]["email"],
-    #         "phone": customer_from_utopia["customer"]["phone"],
-    #         "address": customer_from_utopia["address"]["address"],
-    #         "city": customer_from_utopia["address"]["city"],
-    #         "apt": customer_from_utopia["address"]["city"],
-    #         "state": customer_from_utopia["address"]["state"],
-    #         "zip": customer_from_utopia["address"]["zip"],
-    #         "siteid": customer_from_utopia["address"]["siteid"],
-    #         "orderref": orderref,
-    #         "sp_terms_agree_date" :customer_from_utopia['termsagreement']['sp_terms_agree_date']
-    #     }
     
     def customer_to_pc(self, customer_from_utopia, orderref):
         return {
@@ -286,6 +257,27 @@ class UtopiaAPIHandler:
             "orderref": orderref,
             "sp_terms_agree_date": customer_from_utopia.get('termsagreement', {}).get('sp_terms_agree_date', "")
         }
+    
+    def format_contact_info(self, contact_info):
+        def safe(val):
+            return val if val not in [None, "None", ""] else "N/A"
+
+        formatted_info = (
+            f"Name: {safe(contact_info.get('firstname'))} {safe(contact_info.get('lastname'))}\n"
+            f"Email: {safe(contact_info.get('email'))}\n"
+            f"Phone: {safe(contact_info.get('phone'))}\n"
+            f"Address: {safe(contact_info.get('address'))}\n"
+            f"City: {safe(contact_info.get('city'))}\n"
+            f"State: {safe(contact_info.get('state'))}\n"
+            f"ZIP: {safe(contact_info.get('zip'))}\n"
+            f"Site ID: {safe(contact_info.get('siteid'))}\n"
+            f"Order Ref: {safe(contact_info.get('orderref'))}\n"
+            f"Agreed to Service Provider Terms: {safe(contact_info.get('sp_terms_agree_date'))}"
+        )
+
+        return formatted_info
+
+
 
     def run(self):
         self.app.run(host='0.0.0.0', port=5050)
