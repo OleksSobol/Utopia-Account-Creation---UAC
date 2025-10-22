@@ -141,7 +141,7 @@ class UtopiaAPIHandler:
         customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
         formatted_customer_to_powercode = self.format_contact_info(self.customer_to_pc(customer_from_utopia, orderref))
         
-        logger.warning(f"Creating customer in PC with data: {formatted_customer_to_powercode}")
+        logger.warning(f"Creating customer in PC with data: \n{formatted_customer_to_powercode}")
 
         logger.info("Utopia:", customer_from_utopia)
         customer_first_last_name = (

@@ -30,9 +30,12 @@ def create_powercode_account(url, api_key, customer_info, customer_portal_passwo
         "billDay": "Activation Date",
         "dueByDays": 0,
         "gracePeriodDays": 10,
-        "customerNotes": 'Order# ' + customer_info['orderref'] +
-                         "\nUtopia SiteID: " + customer_info['siteid'] +
-                         "\nAgreed to Service Provider Terms: " + customer_info['sp_terms_agree_date'],
+        "customerNotes": 
+        (
+            'Order# ' + str(customer_info.get('orderref', '')) +
+            "\nUtopia SiteID: " + str(customer_info.get('siteid', '')) +
+            "\nAgreed to Service Provider Terms: " + str(customer_info.get('sp_terms_agree_date', ''))
+        ),
         "customerPortalUsername": customer_info['email'],
         "customerPortalPassword": customer_portal_password,
         "phone": json.dumps([
