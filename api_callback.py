@@ -253,21 +253,21 @@ class UtopiaAPIHandler:
 
         return formatted_info
 
-    def customer_to_pc(self, customer_from_utopia, orderref):
-        return {
-            "firstname": customer_from_utopia["customer"]["firstname"],
-            "lastname": customer_from_utopia["customer"]["lastname"],
-            "email": customer_from_utopia["customer"]["email"],
-            "phone": customer_from_utopia["customer"]["phone"],
-            "address": customer_from_utopia["address"]["address"],
-            "city": customer_from_utopia["address"]["city"],
-            "apt": customer_from_utopia["address"]["city"],
-            "state": customer_from_utopia["address"]["state"],
-            "zip": customer_from_utopia["address"]["zip"],
-            "siteid": customer_from_utopia["address"]["siteid"],
-            "orderref": orderref,
-            "sp_terms_agree_date" :customer_from_utopia['termsagreement']['sp_terms_agree_date']
-        }
+    # def customer_to_pc(self, customer_from_utopia, orderref):
+    #     return {
+    #         "firstname": customer_from_utopia["customer"]["firstname"],
+    #         "lastname": customer_from_utopia["customer"]["lastname"],
+    #         "email": customer_from_utopia["customer"]["email"],
+    #         "phone": customer_from_utopia["customer"]["phone"],
+    #         "address": customer_from_utopia["address"]["address"],
+    #         "city": customer_from_utopia["address"]["city"],
+    #         "apt": customer_from_utopia["address"]["city"],
+    #         "state": customer_from_utopia["address"]["state"],
+    #         "zip": customer_from_utopia["address"]["zip"],
+    #         "siteid": customer_from_utopia["address"]["siteid"],
+    #         "orderref": orderref,
+    #         "sp_terms_agree_date" :customer_from_utopia['termsagreement']['sp_terms_agree_date']
+    #     }
     
     def customer_to_pc(self, customer_from_utopia, orderref):
         return {
