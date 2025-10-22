@@ -126,10 +126,11 @@ class UtopiaAPIHandler:
             if matching_customer:
                 logger.info(f"Customer exist, doing nothing... {customers_list}")
                 customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
+                formatted_customer_to_powercode = self.format_contact_info(customer_to_powercode)
 
                 self.send_email(
                     f"Failed to create customer: Customer exist, Powercode ID {customers_list[0]['CustomerID']}",
-                    f'{customer_to_powercode}',
+                    f'{formatted_customer_to_powercode}',
                     orderref,
                 )
             else:
