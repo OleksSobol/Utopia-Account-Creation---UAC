@@ -27,6 +27,16 @@ logger = logging.getLogger(__name__)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
+def pretty_log_json(data, title=""):
+    """Pretty print JSON data for logging with proper indentation"""
+    if isinstance(data, (dict, list)):
+        formatted = json.dumps(data, indent=2, ensure_ascii=False)
+        if title:
+            return f"{title}:\n{formatted}"
+        return formatted
+    return str(data)
+
+
 class UtopiaAPIHandler:
     def __init__(self):
         self.app = Flask(__name__)
@@ -96,7 +106,7 @@ class UtopiaAPIHandler:
 
         customer_from_utopia = Utopia.getCustomerFromUtopia(orderref)
         
-        logger.info(f"Response from Utopia: {customer_from_utopia}")
+        logger.info(pretty_log_json(customer_from_utopia, "Response from Utopia"))
 
         # Check for error FIRST before trying to access dict methods
         if customer_from_utopia == "Error":
@@ -151,7 +161,7 @@ class UtopiaAPIHandler:
         
         logger.warning(f"Creating customer in PC with data: \n{formatted_customer_to_powercode}")
 
-        logger.info("Utopia:", customer_from_utopia)
+        logger.info(pretty_log_json(customer_from_utopia, "Utopia customer data"))
         customer_first_last_name = (
                     customer_from_utopia["customer"]["firstname"] + " " + customer_from_utopia["customer"]["lastname"])
 
