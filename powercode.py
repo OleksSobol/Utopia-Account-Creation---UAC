@@ -1,12 +1,12 @@
 """ Working With Powercode"""
+import os
 import json
 import time
-
-import requests, random
-import static_vars
 import config
-import os
+import requests
+import static_vars
 
+from static_vars import PC_VERIFY_SSL
 
 def create_powercode_account(url, api_key, customer_info, customer_portal_password="WelcomeToGlobalNet", max_retries=3,
                              retry_delay=5):
@@ -53,7 +53,7 @@ def create_powercode_account(url, api_key, customer_info, customer_portal_passwo
         print(f"Attempt #{attempt + 1} to create Powercode account.")
 
         try:
-            PC_response = requests.post(url + ":444/api/1/index.php", data=account_data, verify=False)
+            PC_response = requests.post(url + ":444/api/1/index.php", data=account_data, verify=PC_VERIFY_SSL)
             print(PC_response.json())
 
             if 'customerID' in PC_response.json():
@@ -88,7 +88,7 @@ def read_powercode_account(customerID):
         'customerID': customerID,
     }
 
-    PC_response = requests.post(static_vars.PC_URL + ":444/api/1/index.php", data=account_data, verify=False)
+    PC_response = requests.post(static_vars.PC_URL + ":444/api/1/index.php", data=account_data, verify=PC_VERIFY_SSL)
     print(PC_response.json())
 
 # Read account
@@ -99,7 +99,7 @@ def get_customer_by_external_id(external_id):
         'extAccountID': external_id,
     }
 
-    PC_response = requests.post(static_vars.PC_URL + ":444/api/1/index.php", data=account_data, verify=False)
+    PC_response = requests.post(static_vars.PC_URL + ":444/api/1/index.php", data=account_data, verify=PC_VERIFY_SSL)
     print(PC_response.json())
 
 
@@ -111,7 +111,7 @@ def search_powercode_customers(searchString):
         'searchString': searchString,
     }
 
-    PC_response = requests.post(static_vars.PC_URL + ":444/api/1/index.php", data=account_data, verify=False)
+    PC_response = requests.post(static_vars.PC_URL + ":444/api/1/index.php", data=account_data, verify=PC_VERIFY_SSL)
     return PC_response.json()
 
 
@@ -148,7 +148,7 @@ def create_powercode_ticket(customer_id, customer_name=""):
 
     }
 
-    PC_response = requests.post(static_vars.PC_URL_Ticket, data=ticket_data, verify=False)
+    PC_response = requests.post(static_vars.PC_URL_Ticket, data=ticket_data, verify=PC_VERIFY_SSL)
 
     # after ticket created, response will contain ticketID that will be need for reply ticket
     # {'message': 'Ticket created', 'statusCode': 0, 'ticketID': '15'}
@@ -166,7 +166,7 @@ def read_powercode_ticket(ticket_id):
         "ticketID": ticket_id
     }
 
-    PC_response = requests.post(static_vars.PC_URL_Ticket, data=ticket_data, verify=False)
+    PC_response = requests.post(static_vars.PC_URL_Ticket, data=ticket_data, verify=PC_VERIFY_SSL)
 
     # after ticket created, response will contain ticketID that will be need for reply ticket
     # {'message': 'Ticket created', 'statusCode': 0, 'ticketID': '15'}
@@ -191,7 +191,7 @@ def add_customer_service_plan(customer_id, service_plan_id):
         'prorateService': 0
     }
 
-    pc_response = requests.post(static_vars.PC_URL + ":444/api/1/index.php", data=service_data, verify=False)
+    pc_response = requests.post(static_vars.PC_URL + ":444/api/1/index.php", data=service_data, verify=PC_VERIFY_SSL)
 
     return pc_response.json()
 
@@ -203,6 +203,6 @@ def read_custom_action(action):
         "action": action,
     }
 
-    response = requests.post(static_vars.PC_URL + ":444/api/1/index.php", data=fields, verify=False)
+    response = requests.post(static_vars.PC_URL + ":444/api/1/index.php", data=fields, verify=PC_VERIFY_SSL)
     return response.json()
     
