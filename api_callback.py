@@ -95,48 +95,55 @@ class UtopiaAPIHandler:
         logger.info(f"Searching for customer - {orderref}")
 
         customer_from_utopia = Utopia.getCustomerFromUtopia(orderref)
-        # Extract Utopia customer info
-        # Extract with safety checks
+        
+        logger.info(f"Response from Utopia: {customer_from_utopia}")
+
+        # Check for error FIRST before trying to access dict methods
+        if customer_from_utopia == "Error":
+            logger.error(f"Failed to fetch customer from Utopia for order {orderref}")
+            self.send_email(
+                f"Failed to fetch customer data from Utopia - Order {orderref}",
+                f"Utopia API returned error for orderref: {orderref}",
+                orderref
+            )
+            return
+
+        # NOW it's safe to extract Utopia customer info
         utopia_name = customer_from_utopia.get('billingaddress', {}).get('name', '')
         utopia_city = customer_from_utopia.get('billingaddress', {}).get('city', '')
 
-        logger.info(f"Response from Utopia: {customer_from_utopia}")
+        logger.info("Searching in PC...")
 
-        if customer_from_utopia != "Error":
-            logger.info("Searching in PC...")
+        firstname = customer_from_utopia.get("customer", {}).get("firstname", "")
+        lastname = customer_from_utopia.get("customer", {}).get("lastname", "")
+        customer_first_last_name = f"{firstname} {lastname}".strip()
 
-            firstname = customer_from_utopia.get("customer", {}).get("firstname", "")
-            lastname = customer_from_utopia.get("customer", {}).get("lastname", "")
-            customer_first_last_name = f"{firstname} {lastname}".strip()
+        customers_list = PowerCode.search_powercode_customers(customer_first_last_name)["customers"]
+        logger.info(customers_list)
 
-            customers_list = PowerCode.search_powercode_customers(customer_first_last_name)["customers"]
-            logger.info(customers_list)
+        # Try to find a match by comparing names
+        matching_customer = None
 
-            # Try to find a match by comparing names
-            matching_customer = None
+        for customer in customers_list:
+            pc_name = customer.get("CompanyName", "")
+            pc_city = customer.get("City", "")
+            if pc_name == utopia_name and pc_city == utopia_city:
+                matching_customer = customer
+                break
 
-            for customer in customers_list:
-                pc_name = customer.get("CompanyName", "")
-                pc_city = customer.get("City", "")
-                if pc_name == utopia_name and pc_city == utopia_city:
-                    matching_customer = customer
-                    break
+        # check by name if customer exist in Powercode.
+        if matching_customer:
+            logger.info(f"Customer exist, doing nothing... {customers_list}")
+            customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
+            formatted_customer_to_powercode = self.format_contact_info(customer_to_powercode)
 
-            # check by name if customer exist in Powercode.
-            if matching_customer:
-                logger.info(f"Customer exist, doing nothing... {customers_list}")
-                customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
-                formatted_customer_to_powercode = self.format_contact_info(customer_to_powercode)
-
-                self.send_email(
-                    f"Failed to create customer: Customer exist, Powercode ID {customers_list[0]['CustomerID']}",
-                    f'{formatted_customer_to_powercode}',
-                    orderref,
-                )
-            else:
-                self.create_new_customer(customer_from_utopia, orderref)
+            self.send_email(
+                f"Failed to create customer: Customer exist, Powercode ID {customers_list[0]['CustomerID']}",
+                f'{formatted_customer_to_powercode}',
+                orderref,
+            )
         else:
-            logger.info("No customer found")
+            self.create_new_customer(customer_from_utopia, orderref)
 
     def create_new_customer(self, customer_from_utopia, orderref):
         customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
