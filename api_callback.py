@@ -28,6 +28,16 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def pretty_log_json(data, title=""):
+    """Pretty print JSON data for logging with proper indentation"""
+    if isinstance(data, (dict, list)):
+        formatted = json.dumps(data, indent=2, ensure_ascii=False)
+        if title:
+            return f"{title}:\n{formatted}"
+        return formatted
+    return str(data)
+
+
 class UtopiaAPIHandler:
     def __init__(self):
         self.app = Flask(__name__)
@@ -96,48 +106,55 @@ class UtopiaAPIHandler:
         logger.info(f"Searching for customer - {orderref}")
 
         customer_from_utopia = Utopia.getCustomerFromUtopia(orderref)
-        # Extract Utopia customer info
-        # Extract with safety checks
+        
+        logger.info(pretty_log_json(customer_from_utopia, "Response from Utopia"))
+
+        # Check for error FIRST before trying to access dict methods
+        if customer_from_utopia == "Error":
+            logger.error(f"Failed to fetch customer from Utopia for order {orderref}")
+            self.send_email(
+                f"Failed to fetch customer data from Utopia - Order {orderref}",
+                f"Utopia API returned error for orderref: {orderref}",
+                orderref
+            )
+            return
+
+        # NOW it's safe to extract Utopia customer info
         utopia_name = customer_from_utopia.get('billingaddress', {}).get('name', '')
         utopia_city = customer_from_utopia.get('billingaddress', {}).get('city', '')
 
-        logger.info(f"Response from Utopia: {customer_from_utopia}")
+        logger.info("Searching in PC...")
 
-        if customer_from_utopia != "Error":
-            logger.info("Searching in PC...")
+        firstname = customer_from_utopia.get("customer", {}).get("firstname", "")
+        lastname = customer_from_utopia.get("customer", {}).get("lastname", "")
+        customer_first_last_name = f"{firstname} {lastname}".strip()
 
-            firstname = customer_from_utopia.get("customer", {}).get("firstname", "")
-            lastname = customer_from_utopia.get("customer", {}).get("lastname", "")
-            customer_first_last_name = f"{firstname} {lastname}".strip()
+        customers_list = PowerCode.search_powercode_customers(customer_first_last_name)["customers"]
+        logger.info(customers_list)
 
-            customers_list = PowerCode.search_powercode_customers(customer_first_last_name)["customers"]
-            logger.info(customers_list)
+        # Try to find a match by comparing names
+        matching_customer = None
 
-            # Try to find a match by comparing names
-            matching_customer = None
+        for customer in customers_list:
+            pc_name = customer.get("CompanyName", "")
+            pc_city = customer.get("City", "")
+            if pc_name == utopia_name and pc_city == utopia_city:
+                matching_customer = customer
+                break
 
-            for customer in customers_list:
-                pc_name = customer.get("CompanyName", "")
-                pc_city = customer.get("City", "")
-                if pc_name == utopia_name and pc_city == utopia_city:
-                    matching_customer = customer
-                    break
+        # check by name if customer exist in Powercode.
+        if matching_customer:
+            logger.info(f"Customer exist, doing nothing... {customers_list}")
+            customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
+            formatted_customer_to_powercode = self.format_contact_info(customer_to_powercode)
 
-            # check by name if customer exist in Powercode.
-            if matching_customer:
-                logger.info(f"Customer exist, doing nothing... {customers_list}")
-                customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
-                formatted_customer_to_powercode = self.format_contact_info(customer_to_powercode)
-
-                self.send_email(
-                    f"Failed to create customer: Customer exist, Powercode ID {customers_list[0]['CustomerID']}",
-                    f'{formatted_customer_to_powercode}',
-                    orderref,
-                )
-            else:
-                self.create_new_customer(customer_from_utopia, orderref)
+            self.send_email(
+                f"Failed to create customer: Customer exist, Powercode ID {customers_list[0]['CustomerID']}",
+                f'{formatted_customer_to_powercode}',
+                orderref,
+            )
         else:
-            logger.info("No customer found")
+            self.create_new_customer(customer_from_utopia, orderref)
 
     def create_new_customer(self, customer_from_utopia, orderref):
         customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
@@ -145,7 +162,7 @@ class UtopiaAPIHandler:
         
         logger.warning(f"Creating customer in PC with data: \n{formatted_customer_to_powercode}")
 
-        logger.info("Utopia:", customer_from_utopia)
+        logger.info(pretty_log_json(customer_from_utopia, "Utopia customer data"))
         customer_first_last_name = (
                     customer_from_utopia["customer"]["firstname"] + " " + customer_from_utopia["customer"]["lastname"])
 
