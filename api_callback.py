@@ -1,16 +1,20 @@
+import os
+import re
 import json
 import logging
-import os
-import requests
 import urllib3
-from flask import Flask, request, jsonify
-from flask_mail import Mail, Message
+import requests
 
 import powercode as PowerCode
 import utopia as Utopia
 import config
 
 from static_vars import *
+from flask_mail import Mail, Message
+from flask import Flask, request, jsonify
+
+# Only disable specific warnings, not all
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Configure logging
 logging.basicConfig(
@@ -22,9 +26,6 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-
-# Only disable specific warnings, not all
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class UtopiaAPIHandler:
