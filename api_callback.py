@@ -9,7 +9,7 @@ import powercode as PowerCode
 import utopia as Utopia
 import config
 
-from static_vars import *
+from config import *
 from flask_mail import Mail, Message
 from flask import Flask, request, jsonify
 
@@ -183,28 +183,25 @@ class UtopiaAPIHandler:
             )
         else:
             # ADD SERVICE PLAN
-            # Determine the service ID before the function call
-            utopia_customers_service_plan = customer_from_utopia["orderitems"][0]["description"]
-
-            # Create a mapping for flexibility, easily add more plans in the future
-            # Service plan mapping for Utopia plans
+            # Service plan mapping for Utopia and Powercode ID of plans
             service_plan_mapping = {
-                "1 Gbps": 164,
-                "250 Mbps": 163,
+                "1 Gbps": SERVICE_PLAN_1GBPS_ID,
+                "250 Mbps": SERVICE_PLAN_250MBPS_ID,
             }
 
-            # Additional plans (manually added or other criteria-based)
+            # Additional plans
             additional_service_plan_mapping = {
-                "Bond fee": 172,
+                "Bond fee": SERVICE_PLAN_BOND_FEE_ID,
             }
 
             # Get Utopia service plan
-            utopia_customes_service_plan = customer_from_utopia["orderitems"][0][
+            utopia_customers_service_plan = customer_from_utopia["orderitems"][0][
                 "description"] if "orderitems" in customer_from_utopia else None
 
             # Get the service ID for the Utopia plan (with a default if not found)
-            service_id_utopia = service_plan_mapping.get(utopia_customes_service_plan,
-                                                         163)  # Default to 163 if not found
+            service_id_utopia = service_plan_mapping.get(
+                utopia_customers_service_plan, SERVICE_PLAN_250MBPS_ID
+            )
 
             # Add Utopia service plan
             service_plan_respond_utopia = PowerCode.add_customer_service_plan(
@@ -214,7 +211,7 @@ class UtopiaAPIHandler:
 
             logger.info(f"Utopia service added: {service_plan_respond_utopia}")
 
-            # Step 3: Add an additional plan manually
+            # Add an additional plan
             additional_plan = "Bond fee" 
             service_id_additional = additional_service_plan_mapping.get(additional_plan, None)
 
@@ -235,7 +232,7 @@ class UtopiaAPIHandler:
             # Send Email
             self.send_email(
                 f"Customer created - {customer_first_last_name} PC#{customer_id}",
-                f'Powercode id: https://management.theglobal.net:444/index.php?q&page=/customers/_view.php&customerid={customer_id} \n{formatted_customer_to_powercode}',
+                f'Powercode id: {PC_URL}:444/index.php?q&page=/customers/_view.php&customerid={customer_id} \n{formatted_customer_to_powercode}',
                 orderref
             )
 

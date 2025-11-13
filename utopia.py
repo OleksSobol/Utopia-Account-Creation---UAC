@@ -1,7 +1,6 @@
 """ Working With Utopia"""
 import requests
 import json
-import static_vars
 import config
 
 # setting up params for API URL
@@ -16,7 +15,7 @@ def getCustomerFromUtopia(orderref):
     params["orderref"] = orderref
 
     response = requests.post(
-        static_vars.URL_ENDPOINT + static_vars.UTOPIA_Contract_Lookup, data=json.dumps(params))
+        config.URL_ENDPOINT + config.UTOPIA_Contract_Lookup, data=json.dumps(params))
 
     if "error" not in response.text and response.status_code == 200:
         data = response.json()
@@ -34,7 +33,7 @@ def getUtopiaCustomerMAC(siteid):
         "siteid": siteid,
     }
 
-    response = requests.post(static_vars.URL_ENDPOINT + static_vars.UTOPIA_APView, data=json.dumps(JSON_REQUEST))
+    response = requests.post(config.URL_ENDPOINT + config.UTOPIA_APView, data=json.dumps(JSON_REQUEST))
     try:
         APView = response.json()["result"][0]['eth']['eth1']["macs"][0][:17]
         APView_full = response.json()
@@ -52,7 +51,7 @@ def getCustomerService(siteid):
         "siteid": siteid,
     }
 
-    response = requests.post(static_vars.URL_ENDPOINT + static_vars.UTOPIA_Service_Lookup,
+    response = requests.post(config.URL_ENDPOINT + config.UTOPIA_Service_Lookup,
                              data=json.dumps(JSON_REQUEST))
     try:
         APView_full = response.json()
