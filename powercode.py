@@ -87,7 +87,7 @@ def read_powercode_account(customerID):
         'customerID': customerID,
     }
 
-    PC_response = requests.post(config.PC_URL + ":444/api/1/index.php", data=account_data, verify=PC_VERIFY_SSL)
+    PC_response = requests.post(config.PC_URL_API, data=account_data, verify=PC_VERIFY_SSL)
     print(PC_response.json())
 
 # Read account
@@ -98,7 +98,7 @@ def get_customer_by_external_id(external_id):
         'extAccountID': external_id,
     }
 
-    PC_response = requests.post(config.PC_URL + ":444/api/1/index.php", data=account_data, verify=PC_VERIFY_SSL)
+    PC_response = requests.post(config.PC_URL_API, data=account_data, verify=PC_VERIFY_SSL)
     print(PC_response.json())
 
 
@@ -110,7 +110,7 @@ def search_powercode_customers(searchString):
         'searchString': searchString,
     }
 
-    PC_response = requests.post(config.PC_URL + ":444/api/1/index.php", data=account_data, verify=PC_VERIFY_SSL)
+    PC_response = requests.post(config.PC_URL_API, data=account_data, verify=PC_VERIFY_SSL)
     return PC_response.json()
 
 
@@ -147,7 +147,7 @@ def create_powercode_ticket(customer_id, customer_name=""):
 
     }
 
-    PC_response = requests.post(config.PC_URL_Ticket, data=ticket_data, verify=PC_VERIFY_SSL)
+    PC_response = requests.post(config.PC_URL_API, data=ticket_data, verify=PC_VERIFY_SSL)
 
     # after ticket created, response will contain ticketID that will be need for reply ticket
     # {'message': 'Ticket created', 'statusCode': 0, 'ticketID': '15'}
@@ -165,7 +165,7 @@ def read_powercode_ticket(ticket_id):
         "ticketID": ticket_id
     }
 
-    PC_response = requests.post(config.PC_URL_Ticket, data=ticket_data, verify=PC_VERIFY_SSL)
+    PC_response = requests.post(config.PC_URL_API, data=ticket_data, verify=PC_VERIFY_SSL)
 
     # after ticket created, response will contain ticketID that will be need for reply ticket
     # {'message': 'Ticket created', 'statusCode': 0, 'ticketID': '15'}
@@ -190,7 +190,7 @@ def add_customer_service_plan(customer_id, service_plan_id):
         'prorateService': 0
     }
 
-    pc_response = requests.post(config.PC_URL + ":444/api/1/index.php", data=service_data, verify=PC_VERIFY_SSL)
+    pc_response = requests.post(config.PC_URL_API, data=service_data, verify=PC_VERIFY_SSL)
 
     return pc_response.json()
 
@@ -202,6 +202,6 @@ def read_custom_action(action):
         "action": action,
     }
 
-    response = requests.post(config.PC_URL + ":444/api/1/index.php", data=fields, verify=PC_VERIFY_SSL)
+    response = requests.post(config.PC_URL_API, data=fields, verify=PC_VERIFY_SSL)
     return response.json()
     

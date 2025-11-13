@@ -10,6 +10,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ============================================================================
+# Flask App Settings
+# ============================================================================
+# Host/port for running the Flask app; can be overridden via environment.
+FLASK_HOST = os.getenv('FLASK_HOST', '0.0.0.0')
+FLASK_PORT = int(os.getenv('FLASK_PORT', '5050'))
+
+# ============================================================================
 # API Keys
 # ============================================================================
 PC_API_KEY = os.getenv("PC_API_KEY")
@@ -19,7 +26,7 @@ UTOPIA_API_KEY = os.getenv("UTOPIA_API_KEY")
 # PowerCode Configuration
 # ============================================================================
 PC_URL = os.getenv('PC_URL')
-PC_URL_Ticket = os.getenv('PC_URL_TICKET')
+PC_URL_API = os.getenv('PC_URL_API')
 PC_addressRangev4 = int(os.getenv('PC_ADDRESS_RANGE_V4', '10228'))
 
 # Service Plan IDs (PowerCode)
@@ -72,7 +79,7 @@ def validate_config():
         'PC_API_KEY',
         'UTOPIA_API_KEY',
         'PC_URL',
-        'PC_URL_TICKET',
+        'PC_URL_API',
         'UTOPIA_URL_ENDPOINT',
         'MAIL_SERVER',
         'EMAIL_SENDER',

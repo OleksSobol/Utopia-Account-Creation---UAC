@@ -199,9 +199,8 @@ class UtopiaAPIHandler:
                 "description"] if "orderitems" in customer_from_utopia else None
 
             # Get the service ID for the Utopia plan (with a default if not found)
-            service_id_utopia = service_plan_mapping.get(
-                utopia_customers_service_plan, SERVICE_PLAN_250MBPS_ID
-            )
+            service_id_utopia = service_plan_mapping.get(utopia_customers_service_plan,
+                                                         default = SERVICE_PLAN_250MBPS_ID)
 
             # Add Utopia service plan
             service_plan_respond_utopia = PowerCode.add_customer_service_plan(
@@ -296,7 +295,8 @@ class UtopiaAPIHandler:
 
 
     def run(self):
-        self.app.run(host='0.0.0.0', port=5050)
+        # Use configured host/port from environment via config.py
+        self.app.run(host=config.FLASK_HOST, port=config.FLASK_PORT)
 
 
 if __name__ == "__main__":
