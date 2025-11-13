@@ -7,7 +7,7 @@ import requests
 
 from config import PC_VERIFY_SSL
 
-def create_powercode_account(url, api_key, customer_info, customer_portal_password="WelcomeToGlobalNet", max_retries=3,
+def create_powercode_account(customer_info, customer_portal_password="WelcomeToGlobalNet", max_retries=3,
                              retry_delay=5):
     if customer_info['state'] == "Montana":
         customer_info['state'] = "MT"
@@ -20,7 +20,7 @@ def create_powercode_account(url, api_key, customer_info, customer_portal_passwo
     )
 
     account_data = {
-        'apiKey': api_key,
+        'apiKey': config.PC_API_KEY,
         'action': 'createCustomer',
         'firstName': customer_info['firstname'],
         'lastName': customer_info['lastname'],
@@ -52,7 +52,7 @@ def create_powercode_account(url, api_key, customer_info, customer_portal_passwo
         print(f"Attempt #{attempt + 1} to create Powercode account.")
 
         try:
-            PC_response = requests.post(url + ":444/api/1/index.php", data=account_data, verify=PC_VERIFY_SSL)
+            PC_response = requests.post(config.PC_URL_API, data=account_data, verify=PC_VERIFY_SSL)
             print(PC_response.json())
 
             if 'customerID' in PC_response.json():

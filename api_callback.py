@@ -168,8 +168,6 @@ class UtopiaAPIHandler:
 
         logger.info(f"Creating Powercode account for orderref={orderref}")
         customer_id = PowerCode.create_powercode_account(
-            PC_URL,
-            config.PC_API_KEY,
             customer_to_powercode,
             customer_portal_password=CUSTOMER_PORTAL_PASSWORD
         )
