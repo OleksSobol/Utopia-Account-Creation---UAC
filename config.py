@@ -10,6 +10,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ============================================================================
+# GUI App Settings
+# ============================================================================
+ADMIN_USER = os.getenv('ADMIN_USER')
+ADMIN_PASS = os.getenv('ADMIN_PASS')
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+
+# ============================================================================
 # Flask App Settings
 # ============================================================================
 # Host/port for running the Flask app; can be overridden via environment.

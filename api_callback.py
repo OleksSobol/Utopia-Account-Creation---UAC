@@ -11,7 +11,9 @@ import config
 
 from config import *
 from flask_mail import Mail, Message
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template, session, redirect, url_for
+from functools import wraps
+
 
 # Only disable specific warnings, not all
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -43,18 +45,268 @@ class UtopiaAPIHandler:
         self.app = Flask(__name__)
         self.app.config['MAIL_SERVER'] = MAIL_SERVER
         self.app.config['MAIL_PORT'] = MAIL_PORT
+        self.app.config['SECRET_KEY'] = SECRET_KEY
+
+        self.admin_username = ADMIN_USER
+        self.admin_password = ADMIN_PASS
+        
         self.mail = Mail(self.app)
         self.setup_routes()
 
+    def login_required(self, f):
+        """
+        Decorator to protect routes that require authentication
+        """
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if 'logged_in' not in session:
+                return redirect(url_for('login'))
+            return f(*args, **kwargs)
+        return decorated_function
+    
+    
     def setup_routes(self):
+        """
+        Setup all Flask routes for the application
+        """
         self.app.route('/', defaults={'path': ''})(self.catch_all)
         self.app.route('/<path:path>')(self.catch_all)
+        
+        # Authentication routes
+        self.app.route('/login', methods=['GET', 'POST'])(self.login)
+        self.app.route('/logout', methods=['POST'])(self.logout)
+        
+        # Admin panel routes (protected)
+        self.app.route('/admin', methods=['GET'])(self.login_required(self.admin_panel))
+        self.app.route('/api/lookup', methods=['POST'])(self.login_required(self.admin_lookup))
+        self.app.route('/api/create-customer', methods=['POST'])(self.login_required(self.create_customer_from_admin))
+
+        # API callback route (no auth required)
         self.app.route('/api-callback', methods=['GET', 'POST'])(self.api_callback)
 
     def catch_all(self, path):
+        """Default route for unmatched paths"""
         return 'This is only for Utopia API'
 
+    def login(self):
+        """
+        Login page and authentication handler
+        GET /login - Show login form
+        POST /login - Authenticate user
+        """
+        if request.method == 'GET':
+            # Check if already logged in
+            if 'logged_in' in session:
+                return redirect(url_for('admin_panel'))
+            return render_template('login.html')
+        
+        # Handle POST request (login form submission)
+        data = request.get_json()
+        username = data.get('username', '')
+        password = data.get('password', '')
+        
+        # Validate credentials
+        if username == self.admin_username and password == self.admin_password:
+            session['logged_in'] = True
+            session['username'] = username
+            logger.info(f"User '{username}' logged in successfully")
+            return jsonify({'success': True}), 200
+        else:
+            logger.warning(f"Failed login attempt for username: {username}")
+            return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
+
+    def logout(self):
+        """
+        Logout handler
+        POST /logout - Clear session and logout user
+        """
+        username = session.get('username', 'Unknown')
+        session.clear()
+        logger.info(f"User '{username}' logged out")
+        return jsonify({'success': True}), 200
+
+    def admin_panel(self):
+        """
+        Renders the admin lookup interface
+        GET /admin - Returns the HTML template
+        """
+        return render_template('admin.html')
+    
+    def admin_lookup(self):
+        """
+        Admin API endpoint for looking up customer data from Utopia
+        POST /api/lookup - Expects JSON with 'orderref' field
+        Returns customer data or error message
+        """
+        try:
+            # Get orderref from request body
+            data = request.get_json()
+            orderref = data.get('orderref', '').strip()
+            
+            # Validate orderref is provided
+            if not orderref:
+                logger.warning("Admin lookup attempted without orderref")
+                return jsonify({
+                    'success': False,
+                    'error': 'Order reference is required'
+                }), 400
+            
+            logger.info(f"Admin lookup for orderref: {orderref}")
+            
+            # Call the Utopia API function
+            result = Utopia.getCustomerFromUtopia(orderref)
+            
+            # Check if result is an error string
+            if result == "Error" or isinstance(result, str):
+                logger.error(f"Admin lookup failed for orderref: {orderref}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Invalid orderref or not found: {orderref}'
+                }), 404
+            
+            # Log successful lookup
+            logger.info(f"Admin lookup successful for orderref: {orderref}")
+            logger.debug(pretty_log_json(result, f"Admin lookup result for {orderref}"))
+            
+            # Return successful response with customer data
+            return jsonify({
+                'success': True,
+                'data': result,
+                'orderref': orderref
+            }), 200
+            
+        except Exception as e:
+            # Catch any unexpected errors and return detailed error message
+            logger.error(f"Error in admin_lookup: {str(e)}", exc_info=True)
+            
+            return jsonify({
+                'success': False,
+                'error': f'Server error: {str(e)}'
+            }), 500
+        
+    def create_customer_from_admin(self):
+        """
+        Create customer in PowerCode from admin panel
+        POST /api/create-customer - Expects JSON with orderref and customer data
+        """
+        try:
+            # Get data from request body
+            data = request.get_json()
+            orderref = data.get('orderref', '').strip()
+            customer_data = data.get('customer_data', {})
+            service_plan = data.get('service_plan', '250 Mbps')  # Get service plan from frontend
+            
+            # Validate inputs
+            if not orderref or not customer_data:
+                logger.warning("Admin create customer attempted without required data")
+                return jsonify({
+                    'success': False,
+                    'error': 'Order reference and customer data are required'
+                }), 400
+            
+            logger.info(f"Admin creating customer for orderref: {orderref}")
+            logger.info(pretty_log_json(customer_data, "Customer data to create"))
+            
+            # Check if customer already exists in PowerCode
+            firstname = customer_data.get("firstname", "")
+            lastname = customer_data.get("lastname", "")
+            customer_first_last_name = f"{firstname} {lastname}".strip()
+            
+            # Get billing info from customer data for duplicate check
+            city = customer_data.get('city', '')
+            
+            logger.info("Checking if customer exists in PowerCode...")
+            customers_list = PowerCode.search_powercode_customers(customer_first_last_name)["customers"]
+            
+            # Try to find a match by name and city
+            matching_customer = None
+            for customer in customers_list:
+                pc_name = customer.get("CompanyName", "")
+                pc_city = customer.get("City", "")
+                # Match by full name and city
+                if pc_name == customer_first_last_name and pc_city == city:
+                    matching_customer = customer
+                    break
+            
+            if matching_customer:
+                logger.warning(f"Customer already exists in PowerCode: {matching_customer.get('CustomerID')}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Customer already exists in PowerCode with ID: {matching_customer.get("CustomerID")}',
+                    'customer_id': matching_customer.get('CustomerID')
+                }), 409
+            
+            # Create customer in PowerCode
+            logger.info(f"Creating PowerCode account for orderref={orderref}")
+            customer_id = PowerCode.create_powercode_account(
+                customer_data,
+                customer_portal_password=CUSTOMER_PORTAL_PASSWORD
+            )
+            
+            if customer_id == -1:
+                logger.error(f"Failed to create customer in PowerCode for orderref: {orderref}")
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to create customer in PowerCode. Check server logs.'
+                }), 500
+            
+            # Add service plans based on service_plan from frontend
+            service_plan_mapping = {
+                "1 Gbps": SERVICE_PLAN_1GBPS_ID,
+                "250 Mbps": SERVICE_PLAN_250MBPS_ID,
+            }
+            
+            additional_service_plan_mapping = {
+                "Bond fee": SERVICE_PLAN_BOND_FEE_ID,
+            }
+            
+            # Add primary service plan using the service plan from frontend
+            service_id_utopia = service_plan_mapping.get(service_plan, SERVICE_PLAN_250MBPS_ID)
+            service_plan_respond_utopia = PowerCode.add_customer_service_plan(customer_id, service_id_utopia)
+            logger.info(f"Service plan '{service_plan}' added: {service_plan_respond_utopia}")
+            
+            # Add Bond fee
+            additional_plan = "Bond fee"
+            service_id_additional = additional_service_plan_mapping.get(additional_plan, None)
+            if service_id_additional:
+                service_plan_respond_additional = PowerCode.add_customer_service_plan(customer_id, service_id_additional)
+                logger.info(f"Additional service added: {service_plan_respond_additional}")
+            
+            # Create PowerCode Ticket
+            ticket_creation_response_pc = PowerCode.create_powercode_ticket(customer_id, customer_data["firstname"])
+            logger.info(f'Ticket: {ticket_creation_response_pc}, created in PowerCode')
+            
+            # Send Email
+            formatted_customer_info = self.format_contact_info(customer_data)
+            self.send_email(
+                f"Customer created - {customer_first_last_name} PC#{customer_id}",
+                f'Powercode id: {PC_URL}:444/index.php?q&page=/customers/_view.php&customerid={customer_id}\n\n{formatted_customer_info}',
+                orderref
+            )
+            
+            logger.info(f"Customer created successfully - Powercode: {customer_id}, Utopia siteID: {customer_data.get('siteid', 'N/A')}")
+            
+            # Return success response
+            return jsonify({
+                'success': True,
+                'customer_id': customer_id,
+                'message': f'Customer created successfully in PowerCode with ID: {customer_id}',
+                'ticket': ticket_creation_response_pc,
+                'service_plan': service_plan
+            }), 200
+            
+        except Exception as e:
+            logger.error(f"Error in create_customer_from_admin: {str(e)}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': f'Server error: {str(e)}'
+            }), 500
+        
     def api_callback(self):
+        """
+        Handle incoming API callbacks from Utopia
+        POST /api-callback - Expects JSON with event, orderref, and msg fields
+        """
     # Check if request has JSON data
         if not request.is_json:
             logger.error("No JSON payload provided")
@@ -90,7 +342,9 @@ class UtopiaAPIHandler:
         return jsonify(response), 200
 
     def handle_information_from_post(self, event, orderref, msg):
-        # search cust in Utopia/Powercode and create customer in Powercode
+        """
+        Route different message types to appropriate handlers
+        """
         if msg == "Project New Order":
             self.handle_new_order(orderref)
         elif msg == "Test":
@@ -103,6 +357,12 @@ class UtopiaAPIHandler:
             logger.warning("No methods to handle that yet!")
 
     def handle_new_order(self, orderref):
+        """
+        Process a new order from Utopia:
+        1. Fetch customer data from Utopia
+        2. Search for existing customer in PowerCode
+        3. Create new customer or send notification if exists
+        """
         logger.info(f"Searching for customer - {orderref}")
 
         customer_from_utopia = Utopia.getCustomerFromUtopia(orderref)
@@ -157,6 +417,9 @@ class UtopiaAPIHandler:
             self.create_new_customer(customer_from_utopia, orderref)
 
     def create_new_customer(self, customer_from_utopia, orderref):
+        """
+        Create a new customer in PowerCode with service plans and ticket
+        """
         customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
         formatted_customer_to_powercode = self.format_contact_info(customer_to_powercode)
         
@@ -238,6 +501,9 @@ class UtopiaAPIHandler:
 
 
     def send_email(self, msg_subject, msg_body, order_ref=None):
+        """
+        Send email notification using Flask-Mail
+        """
         try:
             msg = Message(
                 subject=msg_subject,
@@ -256,6 +522,9 @@ class UtopiaAPIHandler:
 
     
     def customer_to_pc(self, customer_from_utopia, orderref):
+        """
+        Transform Utopia customer data to PowerCode format
+        """
         return {
             "firstname": customer_from_utopia["customer"].get("firstname", ""),
             "lastname": customer_from_utopia["customer"].get("lastname", ""),
@@ -272,6 +541,9 @@ class UtopiaAPIHandler:
         }
     
     def format_contact_info(self, contact_info):
+        """
+        Format customer contact information for email/logging
+        """
         def safe(val):
             return val if val not in [None, "None", ""] else "N/A"
 
@@ -293,7 +565,10 @@ class UtopiaAPIHandler:
 
 
     def run(self):
-        # Use configured host/port from environment via config.py
+        """
+        Start the Flask application
+        Uses configured host/port from config.py
+        """
         self.app.run(host=config.FLASK_HOST, port=config.FLASK_PORT)
 
 
