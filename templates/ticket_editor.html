@@ -1,0 +1,444 @@
+{% extends "base.html" %}
+
+{% block title %}Ticket Template Editor - Utopia Admin{% endblock %}
+
+{% block navbar %}
+<nav class="bg-white shadow-md sticky top-0 z-50">
+    <div class="container mx-auto px-4">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3">
+                <div class="gradient-bg p-2 rounded-lg">
+                    <i class="fas fa-database text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-800">Utopia Admin</h1>
+                    <p class="text-xs text-gray-500">Customer Lookup System</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <a href="/admin" class="flex items-center px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-semibold">
+                    <i class="fas fa-search mr-2"></i>Lookup
+                </a>
+                <a href="/admin/failures" class="flex items-center px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-semibold">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Failures
+                </a>
+                <a href="/admin/ticket-editor" class="flex items-center px-4 py-2 rounded-lg bg-purple-50 text-purple-600 font-semibold hover:bg-purple-100">
+                    <i class="fas fa-file-alt mr-2"></i>Ticket Editor
+                </a>
+                
+                <div class="flex items-center space-x-3 pl-4 border-l-2 border-gray-200">
+                    <div class="text-right">
+                        <p class="text-xs text-gray-500">Logged in as</p>
+                        <p class="text-sm font-semibold text-gray-800">{{ session.get('username', 'Admin') }}</p>
+                    </div>
+                    <button 
+                        onclick="logout()"
+                        class="flex items-center px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold"
+                    >
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+    <!-- Header -->
+    <div class="gradient-bg rounded-2xl shadow-xl p-8 mb-8 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-3xl font-bold mb-2 flex items-center">
+                    <i class="fas fa-file-alt mr-3"></i>Ticket Template Editor
+                </h2>
+                <p class="text-blue-100">Edit and manage customer notification templates</p>
+            </div>
+            <div class="hidden md:block">
+                <i class="fas fa-edit text-6xl opacity-20"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Template List Sidebar -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
+                <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-list mr-2 text-blue-600"></i>Templates
+                </h3>
+                
+                <div class="space-y-2 mb-6">
+                    <button 
+                        onclick="loadTemplate('new_customer')"
+                        id="btn-new_customer"
+                        class="w-full text-left px-4 py-3 rounded-lg bg-blue-50 text-blue-700 font-semibold hover:bg-blue-100 flex items-center justify-between template-btn"
+                    >
+                        <span><i class="fas fa-user-plus mr-2"></i>New Customer</span>
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <hr class="my-4 border-gray-200">
+
+                <button 
+                    onclick="createNewTemplate()"
+                    class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-4 py-3 rounded-lg flex items-center justify-center"
+                >
+                    <i class="fas fa-plus mr-2"></i>Create New Template
+                </button>
+            </div>
+        </div>
+
+        <!-- Editor Area -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-2xl shadow-lg p-8">
+                <!-- Template Info -->
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex-1 mr-4">
+                            <label for="templateName" class="block text-sm font-semibold text-gray-700 mb-2">
+                                Template Name
+                            </label>
+                            <input 
+                                type="text" 
+                                id="templateName" 
+                                placeholder="Enter template name"
+                                class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                Status
+                            </label>
+                            <span id="saveStatus" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-600 text-sm font-semibold inline-block">
+                                <i class="fas fa-circle text-gray-400 mr-2"></i>Ready
+                            </span>
+                        </div>
+                    </div>
+
+                    <div hidden class="mb-4">
+                        <label for="templateSubject" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Email Subject (Optional)
+                        </label>
+                        <input 
+                            type="text" 
+                            id="templateSubject" 
+                            placeholder="Enter email subject line"
+                            class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        >
+                    </div>
+                </div>
+
+                <!-- Editor Tabs -->
+                <div class="mb-4">
+                    <div class="flex space-x-2 border-b-2 border-gray-200">
+                        <button 
+                            onclick="switchEditorMode('html')"
+                            id="tab-html"
+                            class="px-6 py-3 font-semibold text-blue-600 border-b-2 border-blue-600 -mb-0.5"
+                        >
+                            <i class="fas fa-code mr-2"></i>HTML Editor
+                        </button>
+                        <button 
+                            onclick="switchEditorMode('preview')"
+                            id="tab-preview"
+                            class="px-6 py-3 font-semibold text-gray-600 hover:text-gray-800"
+                        >
+                            <i class="fas fa-eye mr-2"></i>Preview
+                        </button>
+                    </div>
+                </div>
+
+                <!-- HTML Editor -->
+                <div id="editor-html" class="mb-6">
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-sm font-semibold text-gray-700">
+                                HTML Content
+                            </label>
+                        </div>
+                        <textarea 
+                            id="templateContent" 
+                            rows="20"
+                            placeholder="Enter HTML content here..."
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono text-sm custom-scrollbar"
+                        ></textarea>
+                    </div>
+
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+                        <p class="text-sm text-blue-800">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <strong>Available Variables:</strong> {customer_name}, {order_ref}, {site_id}, {email}, {phone}, {address}, {city}, {state}, {zip}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Preview -->
+                <div id="editor-preview" class="mb-6 hidden">
+                    <div class="border-2 border-gray-200 rounded-lg p-6 bg-gray-50 min-h-[500px] custom-scrollbar overflow-auto">
+                        <div id="previewContent" class="bg-white p-8 rounded-lg shadow-sm">
+                            <p class="text-gray-400 italic text-center py-20">Preview will appear here...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex space-x-3">
+                    <button 
+                        onclick="saveTemplate()"
+                        id="saveBtn"
+                        class="flex-1 gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center"
+                    >
+                        <i class="fas fa-save mr-2"></i>Save Template
+                    </button>
+                    <button 
+                        onclick="downloadTemplate()"
+                        class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center"
+                    >
+                        <i class="fas fa-download mr-2"></i>Download
+                    </button>
+                    <button 
+                        onclick="resetEditor()"
+                        class="bg-gray-500 hover:bg-gray-600 text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center"
+                    >
+                        <i class="fas fa-undo mr-2"></i>Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Container -->
+<div id="alertContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentTemplate = 'new_customer';
+let originalContent = '';
+
+// Sample templates data
+const templates = {
+    new_customer: {
+        name: 'New Customer Welcome',
+        content: `{{ template_content | safe }}`
+    }
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadTemplate('new_customer');
+});
+
+function loadTemplate(templateId) {
+    currentTemplate = templateId;
+    
+    // Update button states
+    document.querySelectorAll('.template-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-50', 'text-blue-700');
+        btn.classList.add('text-gray-700');
+    });
+    
+    const activeBtn = document.getElementById(`btn-${templateId}`);
+    if (activeBtn) {
+        activeBtn.classList.add('bg-blue-50', 'text-blue-700');
+        activeBtn.classList.remove('text-gray-700');
+    }
+    
+    // Load template data
+    const template = templates[templateId];
+    if (template) {
+        document.getElementById('templateName').value = template.name;
+        document.getElementById('templateSubject').value = template.subject || '';
+        document.getElementById('templateContent').value = template.content;
+        originalContent = template.content;
+        
+        updateStatus('Loaded', 'success');
+        setTimeout(() => updateStatus('Ready', 'ready'), 2000);
+    }
+}
+
+function switchEditorMode(mode) {
+    const htmlTab = document.getElementById('tab-html');
+    const previewTab = document.getElementById('tab-preview');
+    const htmlEditor = document.getElementById('editor-html');
+    const preview = document.getElementById('editor-preview');
+    
+    if (mode === 'html') {
+        htmlTab.classList.add('text-blue-600', 'border-b-2', 'border-blue-600', '-mb-0.5');
+        htmlTab.classList.remove('text-gray-600');
+        previewTab.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600', '-mb-0.5');
+        previewTab.classList.add('text-gray-600');
+        
+        htmlEditor.classList.remove('hidden');
+        preview.classList.add('hidden');
+    } else {
+        previewTab.classList.add('text-blue-600', 'border-b-2', 'border-blue-600', '-mb-0.5');
+        previewTab.classList.remove('text-gray-600');
+        htmlTab.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600', '-mb-0.5');
+        htmlTab.classList.add('text-gray-600');
+        
+        preview.classList.remove('hidden');
+        htmlEditor.classList.add('hidden');
+        
+        // Update preview
+        updatePreview();
+    }
+}
+
+function updatePreview() {
+    const content = document.getElementById('templateContent').value;
+    const previewContent = content
+        .replace(/{customer_name}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">John Doe</span>')
+        .replace(/{order_ref}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">UIA202511-038109</span>')
+        .replace(/{site_id}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">SITE-12345</span>')
+        .replace(/{email}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">john@example.com</span>')
+        .replace(/{phone}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">555-0123</span>')
+        .replace(/{address}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">123 Main St</span>')
+        .replace(/{city}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">Springfield</span>')
+        .replace(/{state}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">IL</span>')
+        .replace(/{zip}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">62701</span>');
+    
+    document.getElementById('previewContent').innerHTML = previewContent;
+}
+
+function insertVariable(variable) {
+    const textarea = document.getElementById('templateContent');
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    
+    textarea.value = text.substring(0, start) + variable + text.substring(end);
+    textarea.focus();
+    textarea.setSelectionRange(start + variable.length, start + variable.length);
+}
+
+async function saveTemplate() {
+    const name = document.getElementById('templateName').value.trim();
+    const subject = document.getElementById('templateSubject').value.trim();
+    const content = document.getElementById('templateContent').value;
+    
+    if (!name || !content) {
+        showAlert('Please enter a template name and content', 'danger');
+        return;
+    }
+    
+    updateStatus('Saving...', 'loading');
+    
+    try {
+        const response = await fetch('/api/ticket-template/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                template_id: currentTemplate,
+                name: name,
+                subject: subject,
+                content: content
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('Template saved successfully', 'success');
+            updateStatus('Saved', 'success');
+            originalContent = content;
+            
+            // Update local template data
+            templates[currentTemplate] = { name, subject, content };
+        } else {
+            showAlert('Failed to save template: ' + result.error, 'danger');
+            updateStatus('Error', 'error');
+        }
+    } catch (error) {
+        showAlert('Error saving template: ' + error.message, 'danger');
+        updateStatus('Error', 'error');
+    }
+}
+
+function downloadTemplate() {
+    const content = document.getElementById('templateContent').value;
+    const name = document.getElementById('templateName').value.trim() || 'template';
+    
+    const blob = new Blob([content], { type: 'text/html' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${name.toLowerCase().replace(/\s+/g, '_')}.html`;
+    link.click();
+    
+    showAlert('Template downloaded', 'success');
+}
+
+function resetEditor() {
+    if (confirm('Are you sure you want to reset? Any unsaved changes will be lost.')) {
+        document.getElementById('templateContent').value = originalContent;
+        updatePreview();
+        showAlert('Template reset to last saved version', 'info');
+    }
+}
+
+
+function updateStatus(text, type) {
+    const colors = {
+        ready: 'bg-gray-100 text-gray-600',
+        loading: 'bg-blue-100 text-blue-600',
+        success: 'bg-green-100 text-green-600',
+        error: 'bg-red-100 text-red-600'
+    };
+    
+    const icons = {
+        ready: 'fa-circle',
+        loading: 'fa-spinner fa-spin',
+        success: 'fa-check-circle',
+        error: 'fa-exclamation-circle'
+    };
+    
+    const status = document.getElementById('saveStatus');
+    status.className = `px-4 py-2 rounded-lg ${colors[type]} text-sm font-semibold inline-block`;
+    status.innerHTML = `<i class="fas ${icons[type]} mr-2"></i>${text}`;
+}
+
+function showAlert(message, type = 'info') {
+    const colors = {
+        info: 'bg-blue-500',
+        success: 'bg-green-500',
+        warning: 'bg-yellow-500',
+        danger: 'bg-red-500'
+    };
+    
+    const icons = {
+        info: 'fa-info-circle',
+        success: 'fa-check-circle',
+        warning: 'fa-exclamation-triangle',
+        danger: 'fa-times-circle'
+    };
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `${colors[type]} text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 animate-fade-in`;
+    alertDiv.innerHTML = `
+        <i class="fas ${icons[type]}"></i>
+        <span>${message}</span>
+    `;
+    document.getElementById('alertContainer').appendChild(alertDiv);
+    setTimeout(() => alertDiv.remove(), 5000);
+}
+
+async function logout() {
+    try {
+        const response = await fetch('/logout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (response.ok) {
+            window.location.href = '/login';
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+}
+</script>
+{% endblock %}

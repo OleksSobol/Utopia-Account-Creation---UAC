@@ -76,7 +76,7 @@ CUSTOMER_PORTAL_PASSWORD = os.getenv('CUSTOMER_PORTAL_PASSWORD')
 # ============================================================================
 # Logging Configuration
 # ============================================================================
-LOG_FILE = 'api_class.log'
+LOG_FILE = 'utopia_api.log'
 
 # ============================================================================
 # Configuration Validation

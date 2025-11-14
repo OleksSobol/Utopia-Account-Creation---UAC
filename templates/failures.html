@@ -1,468 +1,401 @@
-{% extends "layout.html" %}
-{% block content %}
+{% extends "base.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Failure Management - UAC Admin</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .failure-card {
-            border-left: 4px solid #dc3545;
-            margin-bottom: 1rem;
-        }
-        .failure-resolved {
-            border-left-color: #28a745;
-            opacity: 0.7;
-        }
-        .failure-type-badge {
-            font-size: 0.75rem;
-        }
-        .retry-badge {
-            background-color: #ffc107;
-            color: #000;
-        }
-        .stats-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .btn-resolve {
-            background-color: #28a745;
-            border-color: #28a745;
-        }
-        .btn-resolve:hover {
-            background-color: #218838;
-            border-color: #1e7e34;
-        }
-        .loading-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 9999;
-            align-items: center;
-            justify-content: center;
-        }
-        .timestamp {
-            font-size: 0.8rem;
-            color: #6c757d;
-        }
-        .customer-data {
-            background-color: #f8f9fa;
-            border-radius: 0.25rem;
-            padding: 0.5rem;
-            margin-top: 0.5rem;
-            font-family: monospace;
-            font-size: 0.85rem;
-        }
-    </style>
-</head>
-<body>
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="text-center">
-            <div class="spinner-border text-light" role="status">
-                <span class="visually-hidden">Loading...</span>
+{% block title %}Failure Management - Utopia Admin{% endblock %}
+
+{% block navbar %}
+<nav class="bg-white shadow-md sticky top-0 z-50">
+    <div class="container mx-auto px-4">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3">
+                <div class="gradient-bg p-2 rounded-lg">
+                    <i class="fas fa-database text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-800">Utopia Admin</h1>
+                    <p class="text-xs text-gray-500">Customer Lookup System</p>
+                </div>
             </div>
-            <div class="text-light mt-2">Processing...</div>
-        </div>
-    </div>
-
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/admin">
-                <i class="fas fa-cogs"></i> UAC Admin
-            </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/admin">
-                    <i class="fas fa-search"></i> Customer Lookup
+            
+            <!-- Navigation Links -->
+            <div class="flex items-center space-x-4">
+                <a href="/admin" class="flex items-center px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-semibold">
+                    <i class="fas fa-search mr-2"></i>Lookup
                 </a>
-                <a class="nav-link active" href="/admin/failures">
-                    <i class="fas fa-exclamation-triangle"></i> Failures
+                <a href="/admin/failures" class="flex items-center px-4 py-2 rounded-lg bg-yellow-50 text-yellow-600 font-semibold hover:bg-yellow-100">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Failures
                 </a>
-                <button class="btn btn-outline-light btn-sm" onclick="logout()">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </button>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container mt-4">
-        <!-- Header with Statistics -->
-        <div class="row mb-4">
-            <div class="col-md-8">
-                <h2><i class="fas fa-exclamation-triangle text-warning"></i> Failure Management</h2>
-                <p class="text-muted">Monitor and manage failed customer creation attempts</p>
-            </div>
-            <div class="col-md-4">
-                <div class="card stats-card">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">Statistics</h5>
-                        <div id="statsContent">
-                            <div class="spinner-border spinner-border-sm" role="status"></div>
-                        </div>
+                <a href="/admin/ticket-editor" class="flex items-center px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-semibold">
+                    <i class="fas fa-file-alt mr-2"></i>Ticket Editor
+                </a>
+                
+                <div class="flex items-center space-x-3 pl-4 border-l-2 border-gray-200">
+                    <div class="text-right">
+                        <p class="text-xs text-gray-500">Logged in as</p>
+                        <p class="text-sm font-semibold text-gray-800">{{ session.get('username', 'Admin') }}</p>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Controls -->
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="includeResolved">
-                    <label class="form-check-label" for="includeResolved">
-                        <i class="fas fa-check-circle"></i> Include resolved failures
-                    </label>
-                </div>
-            </div>
-            <div class="col-md-6 text-end">
-                <button class="btn btn-primary" onclick="refreshFailures()">
-                    <i class="fas fa-sync-alt"></i> Refresh
-                </button>
-                <button class="btn btn-info" onclick="exportFailures()" title="Export to JSON">
-                    <i class="fas fa-download"></i> Export
-                </button>
-            </div>
-        </div>
-
-        <!-- Failures List -->
-        <div id="failuresContainer">
-            <div class="text-center py-5">
-                <div class="spinner-border" role="status">
-                    <span class="visually-hidden">Loading failures...</span>
-                </div>
-                <div class="mt-2">Loading failures...</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Resolution Modal -->
-    <div class="modal fade" id="resolutionModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-check-circle text-success"></i> Mark as Resolved
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Mark failure <strong id="modalOrderRef"></strong> as resolved?</p>
-                    <div class="mb-3">
-                        <label for="resolutionNote" class="form-label">Resolution Note (optional)</label>
-                        <textarea class="form-control" id="resolutionNote" rows="3" 
-                                  placeholder="Describe how this issue was resolved..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-success" onclick="confirmResolve()">
-                        <i class="fas fa-check"></i> Mark Resolved
+                    <button 
+                        onclick="logout()"
+                        class="flex items-center px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold"
+                    >
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
                     </button>
                 </div>
             </div>
         </div>
     </div>
+</nav>
+{% endblock %}
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        let currentOrderRef = null;
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- Header with Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="md:col-span-2">
+            <div class="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl shadow-xl p-8 text-white">
+                <h2 class="text-3xl font-bold mb-2 flex items-center">
+                    <i class="fas fa-exclamation-triangle mr-3"></i>Failure Management
+                </h2>
+                <p class="text-yellow-50">Monitor and manage failed customer creation attempts</p>
+            </div>
+        </div>
+        
+        <div class="gradient-bg rounded-2xl shadow-xl p-6 text-white">
+            <h5 class="text-lg font-bold mb-4 flex items-center">
+                <i class="fas fa-chart-bar mr-2"></i>Statistics
+            </h5>
+            <div id="statsContent" class="text-center">
+                <div class="animate-spin inline-block w-8 h-8 border-4 border-white border-t-transparent rounded-full"></div>
+            </div>
+        </div>
+    </div>
 
-        // Load failures on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            loadFailures();
-            loadStats();
+    <!-- Controls -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-6">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" id="includeResolved" class="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500">
+                    <span class="ml-3 text-gray-700 font-semibold">
+                        <i class="fas fa-check-circle mr-2 text-green-600"></i>Include resolved failures
+                    </span>
+                </label>
+            </div>
             
-            // Auto-refresh every 30 seconds
-            setInterval(() => {
-                loadFailures();
-                loadStats();
-            }, 30000);
+            <div class="flex space-x-3">
+                <button onclick="refreshFailures()" class="gradient-bg hover:shadow-lg text-white font-semibold px-6 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-sync-alt mr-2"></i>Refresh
+                </button>
+                <button onclick="exportFailures()" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold px-6 py-2 rounded-lg flex items-center">
+                    <i class="fas fa-download mr-2"></i>Export
+                </button>
+            </div>
+        </div>
+    </div>
 
-            // Add event listener for include resolved checkbox
-            document.getElementById('includeResolved').addEventListener('change', loadFailures);
+    <!-- Failures List -->
+    <div id="failuresContainer">
+        <div class="text-center py-20">
+            <div class="animate-spin inline-block w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full mb-4"></div>
+            <div class="text-gray-600 font-semibold">Loading failures...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Resolution Modal -->
+<div id="resolutionModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+        <div class="gradient-bg text-white p-6 rounded-t-2xl">
+            <h5 class="text-2xl font-bold flex items-center">
+                <i class="fas fa-check-circle mr-2"></i>Mark as Resolved
+            </h5>
+        </div>
+        <div class="p-6">
+            <p class="mb-4 text-gray-700">Mark failure <strong id="modalOrderRef" class="text-blue-600"></strong> as resolved?</p>
+            <div class="mb-4">
+                <label for="resolutionNote" class="block text-sm font-semibold text-gray-700 mb-2">Resolution Note (optional)</label>
+                <textarea 
+                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" 
+                    id="resolutionNote" 
+                    rows="3" 
+                    placeholder="Describe how this issue was resolved..."></textarea>
+            </div>
+        </div>
+        <div class="flex space-x-3 p-6 pt-0">
+            <button onclick="closeResolutionModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold px-4 py-3 rounded-lg">
+                <i class="fas fa-times mr-2"></i>Cancel
+            </button>
+            <button onclick="confirmResolve()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-3 rounded-lg">
+                <i class="fas fa-check mr-2"></i>Mark Resolved
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Container -->
+<div id="alertContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentOrderRef = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadFailures();
+    loadStats();
+    setInterval(() => { loadFailures(); loadStats(); }, 30000);
+    document.getElementById('includeResolved').addEventListener('change', loadFailures);
+});
+
+function showAlert(message, type = 'info') {
+    const colors = {
+        info: 'bg-blue-500',
+        success: 'bg-green-500',
+        warning: 'bg-yellow-500',
+        danger: 'bg-red-500'
+    };
+    
+    const icons = {
+        info: 'fa-info-circle',
+        success: 'fa-check-circle',
+        warning: 'fa-exclamation-triangle',
+        danger: 'fa-times-circle'
+    };
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `${colors[type]} text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 animate-fade-in`;
+    alertDiv.innerHTML = `
+        <i class="fas ${icons[type]}"></i>
+        <span>${message}</span>
+    `;
+    document.getElementById('alertContainer').appendChild(alertDiv);
+    setTimeout(() => alertDiv.remove(), 5000);
+}
+
+async function loadFailures() {
+    try {
+        const includeResolved = document.getElementById('includeResolved').checked;
+        const response = await fetch(`/api/failures?include_resolved=${includeResolved}`);
+        const data = await response.json();
+
+        if (data.success) {
+            displayFailures(data.failures);
+        } else {
+            showAlert('Failed to load failures: ' + data.error, 'danger');
+        }
+    } catch (error) {
+        showAlert('Error loading failures: ' + error.message, 'danger');
+    }
+}
+
+async function loadStats() {
+    try {
+        const response = await fetch('/api/failures/stats');
+        const data = await response.json();
+
+        if (data.success) {
+            displayStats(data.stats);
+        }
+    } catch (error) {
+        console.error('Error loading stats:', error);
+    }
+}
+
+function displayStats(stats) {
+    const statsHtml = `
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+                <div class="text-3xl font-bold">${stats.unresolved_failures}</div>
+                <div class="text-sm text-blue-100">Unresolved</div>
+            </div>
+            <div>
+                <div class="text-3xl font-bold">${stats.total_failures}</div>
+                <div class="text-sm text-blue-100">Total</div>
+            </div>
+        </div>
+        <hr class="border-white border-opacity-30 my-3">
+        <div class="text-sm space-y-1">
+            <div class="flex justify-between">
+                <span>Retries:</span>
+                <span class="font-bold">${stats.total_retries}</span>
+            </div>
+            <div class="flex justify-between">
+                <span>Resolved:</span>
+                <span class="font-bold">${stats.resolved_failures}</span>
+            </div>
+        </div>
+    `;
+    document.getElementById('statsContent').innerHTML = statsHtml;
+}
+
+function displayFailures(failures) {
+    const container = document.getElementById('failuresContainer');
+    
+    if (failures.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-20 bg-white rounded-2xl shadow-lg">
+                <i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i>
+                <h5 class="text-2xl font-bold text-gray-800 mb-2">No failures found</h5>
+                <p class="text-gray-600">All customer creation attempts are successful!</p>
+            </div>
+        `;
+        return;
+    }
+
+    const failuresHtml = failures.map(failure => {
+        const isResolved = failure.resolved;
+        const statusClass = isResolved ? 'border-green-500 bg-green-50 opacity-75' : 'border-red-500 bg-white';
+        const statusBadge = isResolved ? '<span class="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">RESOLVED</span>' : '<span class="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">ACTIVE</span>';
+        const retryBadge = failure.retry_count > 0 ? `<span class="bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-bold">${failure.retry_count} retries</span>` : '';
+
+        return `
+            <div class="bg-white border-l-4 ${statusClass} rounded-r-2xl shadow-lg p-6 mb-6 hover-lift">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-3 mb-2">
+                            <h6 class="text-xl font-bold text-gray-800 flex items-center">
+                                <i class="fas fa-file-alt mr-2 text-blue-600"></i>${failure.orderref}
+                            </h6>
+                            ${statusBadge}
+                            ${retryBadge}
+                        </div>
+                        <p class="text-red-600 font-semibold mb-3 flex items-center">
+                            <i class="fas fa-exclamation-circle mr-2"></i>${failure.error_message}
+                        </p>
+                        <div class="text-sm text-gray-500 space-y-1">
+                            <div><i class="far fa-clock mr-2"></i>First: ${new Date(failure.first_failure).toLocaleString()}</div>
+                            <div><i class="far fa-clock mr-2"></i>Last: ${new Date(failure.timestamp).toLocaleString()}</div>
+                        </div>
+                        ${isResolved ? `
+                            <div class="mt-4 p-3 bg-green-100 rounded-lg">
+                                <p class="text-sm text-green-700 font-semibold">
+                                    <i class="fas fa-check-circle mr-2"></i>Resolved: ${new Date(failure.resolved_timestamp).toLocaleString()}
+                                </p>
+                                ${failure.resolution_note ? `<p class="text-sm text-gray-600 mt-1">Note: ${failure.resolution_note}</p>` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="flex flex-col space-y-2 ml-4">
+                        ${!isResolved ? `
+                            <button onclick="showResolutionModal('${failure.orderref}')" class="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg flex items-center whitespace-nowrap">
+                                <i class="fas fa-check mr-2"></i>Resolve
+                            </button>
+                        ` : ''}
+                        <button onclick="deleteFailure('${failure.orderref}')" class="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-lg flex items-center whitespace-nowrap">
+                            <i class="fas fa-trash mr-2"></i>Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = failuresHtml;
+}
+
+function refreshFailures() {
+    loadFailures();
+    loadStats();
+    showAlert('Failures refreshed', 'success');
+}
+
+function showResolutionModal(orderref) {
+    currentOrderRef = orderref;
+    document.getElementById('modalOrderRef').textContent = orderref;
+    document.getElementById('resolutionNote').value = '';
+    document.getElementById('resolutionModal').classList.remove('hidden');
+}
+
+function closeResolutionModal() {
+    document.getElementById('resolutionModal').classList.add('hidden');
+    currentOrderRef = null;
+}
+
+async function confirmResolve() {
+    if (!currentOrderRef) return;
+
+    try {
+        const note = document.getElementById('resolutionNote').value.trim();
+        const response = await fetch(`/api/failures/${currentOrderRef}/resolve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ note })
         });
 
-        function showLoading() {
-            document.getElementById('loadingOverlay').style.display = 'flex';
-        }
-
-        function hideLoading() {
-            document.getElementById('loadingOverlay').style.display = 'none';
-        }
-
-        function showAlert(message, type = 'info') {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-            alertDiv.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.container').firstChild);
-            
-            // Auto-dismiss after 5 seconds
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.remove();
-                }
-            }, 5000);
-        }
-
-        async function loadFailures() {
-            try {
-                const includeResolved = document.getElementById('includeResolved').checked;
-                const response = await fetch(`/api/failures?include_resolved=${includeResolved}`);
-                const data = await response.json();
-
-                if (data.success) {
-                    displayFailures(data.failures);
-                } else {
-                    showAlert('Failed to load failures: ' + data.error, 'danger');
-                }
-            } catch (error) {
-                console.error('Error loading failures:', error);
-                showAlert('Error loading failures: ' + error.message, 'danger');
-            }
-        }
-
-        async function loadStats() {
-            try {
-                const response = await fetch('/api/failures/stats');
-                const data = await response.json();
-
-                if (data.success) {
-                    displayStats(data.stats);
-                } else {
-                    console.error('Failed to load stats:', data.error);
-                }
-            } catch (error) {
-                console.error('Error loading stats:', error);
-            }
-        }
-
-        function displayStats(stats) {
-            const statsHtml = `
-                <div class="row text-center">
-                    <div class="col-6">
-                        <div class="h4 mb-0">${stats.unresolved_failures}</div>
-                        <small>Unresolved</small>
-                    </div>
-                    <div class="col-6">
-                        <div class="h4 mb-0">${stats.total_failures}</div>
-                        <small>Total</small>
-                    </div>
-                </div>
-                <hr class="my-2" style="border-color: rgba(255,255,255,0.3)">
-                <div class="small">
-                    <div>Retries: ${stats.total_retries}</div>
-                    <div>Resolved: ${stats.resolved_failures}</div>
-                </div>
-            `;
-            document.getElementById('statsContent').innerHTML = statsHtml;
-        }
-
-        function displayFailures(failures) {
-            const container = document.getElementById('failuresContainer');
-            
-            if (failures.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-5 text-muted">
-                        <i class="fas fa-check-circle fa-3x mb-3"></i>
-                        <h5>No failures found</h5>
-                        <p>All customer creation attempts are successful!</p>
-                    </div>
-                `;
-                return;
-            }
-
-            const failuresHtml = failures.map(failure => {
-                const isResolved = failure.resolved;
-                const retryBadge = failure.retry_count > 0 ? 
-                    `<span class="badge retry-badge ms-1">${failure.retry_count} retries</span>` : '';
-                
-                const customerDataHtml = failure.customer_data && Object.keys(failure.customer_data).length > 0 ? `
-                    <div class="customer-data">
-                        <strong>Customer Data:</strong><br>
-                        ${Object.entries(failure.customer_data).map(([key, value]) => 
-                            `${key}: ${value || 'N/A'}`
-                        ).join('<br>')}
-                    </div>
-                ` : '';
-
-                const resolutionInfo = isResolved ? `
-                    <div class="mt-2 p-2 bg-light rounded">
-                        <small class="text-success">
-                            <i class="fas fa-check-circle"></i> 
-                            Resolved: ${new Date(failure.resolved_timestamp).toLocaleString()}
-                        </small>
-                        ${failure.resolution_note ? `<br><small>Note: ${failure.resolution_note}</small>` : ''}
-                    </div>
-                ` : '';
-
-                return `
-                    <div class="card failure-card ${isResolved ? 'failure-resolved' : ''}">
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <h6 class="card-title">
-                                        <i class="fas fa-file-alt"></i> ${failure.orderref}
-                                        <span class="badge bg-secondary failure-type-badge ms-2">${failure.failure_type}</span>
-                                        ${retryBadge}
-                                        ${isResolved ? '<span class="badge bg-success ms-1">RESOLVED</span>' : ''}
-                                    </h6>
-                                    <p class="card-text text-danger mb-2">
-                                        <i class="fas fa-exclamation-circle"></i> ${failure.error_message}
-                                    </p>
-                                    <div class="timestamp">
-                                        <i class="fas fa-clock"></i> 
-                                        First: ${new Date(failure.first_failure).toLocaleString()}
-                                        | Last: ${new Date(failure.timestamp).toLocaleString()}
-                                    </div>
-                                    ${customerDataHtml}
-                                    ${resolutionInfo}
-                                </div>
-                                <div class="col-md-4 text-end">
-                                    ${!isResolved ? `
-                                        <button class="btn btn-resolve btn-sm mb-1" 
-                                                onclick="showResolutionModal('${failure.orderref}')">
-                                            <i class="fas fa-check"></i> Resolve
-                                        </button>
-                                    ` : ''}
-                                    <button class="btn btn-outline-danger btn-sm mb-1" 
-                                            onclick="deleteFailure('${failure.orderref}')">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            container.innerHTML = failuresHtml;
-        }
-
-        function refreshFailures() {
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert(`Failure ${currentOrderRef} marked as resolved`, 'success');
+            closeResolutionModal();
             loadFailures();
             loadStats();
-            showAlert('Failures refreshed', 'success');
+        } else {
+            showAlert('Failed to resolve: ' + data.error, 'danger');
         }
+    } catch (error) {
+        showAlert('Error resolving failure: ' + error.message, 'danger');
+    }
+}
 
-        function showResolutionModal(orderref) {
-            currentOrderRef = orderref;
-            document.getElementById('modalOrderRef').textContent = orderref;
-            document.getElementById('resolutionNote').value = '';
-            new bootstrap.Modal(document.getElementById('resolutionModal')).show();
+async function deleteFailure(orderref) {
+    if (!confirm(`Are you sure you want to permanently delete failure ${orderref}?`)) return;
+
+    try {
+        const response = await fetch(`/api/failures/${orderref}/delete`, {
+            method: 'DELETE'
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert(`Failure ${orderref} deleted`, 'warning');
+            loadFailures();
+            loadStats();
+        } else {
+            showAlert('Failed to delete: ' + data.error, 'danger');
         }
+    } catch (error) {
+        showAlert('Error deleting failure: ' + error.message, 'danger');
+    }
+}
 
-        async function confirmResolve() {
-            if (!currentOrderRef) return;
-
-            showLoading();
-            try {
-                const note = document.getElementById('resolutionNote').value.trim();
-                const response = await fetch(`/api/failures/${currentOrderRef}/resolve`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ note: note })
-                });
-
-                const data = await response.json();
+function exportFailures() {
+    const includeResolved = document.getElementById('includeResolved').checked;
+    
+    fetch(`/api/failures?include_resolved=${includeResolved}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const dataStr = JSON.stringify(data, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
                 
-                if (data.success) {
-                    showAlert(`Failure ${currentOrderRef} marked as resolved`, 'success');
-                    bootstrap.Modal.getInstance(document.getElementById('resolutionModal')).hide();
-                    loadFailures();
-                    loadStats();
-                } else {
-                    showAlert('Failed to resolve: ' + data.error, 'danger');
-                }
-            } catch (error) {
-                showAlert('Error resolving failure: ' + error.message, 'danger');
-            } finally {
-                hideLoading();
-                currentOrderRef = null;
-            }
-        }
-
-        async function deleteFailure(orderref) {
-            if (!confirm(`Are you sure you want to permanently delete failure ${orderref}?`)) {
-                return;
-            }
-
-            showLoading();
-            try {
-                const response = await fetch(`/api/failures/${orderref}/delete`, {
-                    method: 'DELETE'
-                });
-
-                const data = await response.json();
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = `failures-export-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
                 
-                if (data.success) {
-                    showAlert(`Failure ${orderref} deleted`, 'warning');
-                    loadFailures();
-                    loadStats();
-                } else {
-                    showAlert('Failed to delete: ' + data.error, 'danger');
-                }
-            } catch (error) {
-                showAlert('Error deleting failure: ' + error.message, 'danger');
-            } finally {
-                hideLoading();
+                showAlert('Failures exported successfully', 'success');
+            } else {
+                showAlert('Failed to export: ' + data.error, 'danger');
             }
-        }
+        })
+        .catch(error => showAlert('Export error: ' + error.message, 'danger'));
+}
 
-        function exportFailures() {
-            const includeResolved = document.getElementById('includeResolved').checked;
-            
-            fetch(`/api/failures?include_resolved=${includeResolved}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const dataStr = JSON.stringify(data, null, 2);
-                        const dataBlob = new Blob([dataStr], {type: 'application/json'});
-                        
-                        const link = document.createElement('a');
-                        link.href = URL.createObjectURL(dataBlob);
-                        link.download = `failures-export-${new Date().toISOString().split('T')[0]}.json`;
-                        link.click();
-                        
-                        showAlert('Failures exported successfully', 'success');
-                    } else {
-                        showAlert('Failed to export: ' + data.error, 'danger');
-                    }
-                })
-                .catch(error => {
-                    showAlert('Export error: ' + error.message, 'danger');
-                });
-        }
+async function logout() {
+    try {
+        const response = await fetch('/logout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
 
-        async function logout() {
-            try {
-                const response = await fetch('/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    window.location.href = '/login';
-                } else {
-                    showAlert('Logout failed', 'danger');
-                }
-            } catch (error) {
-                showAlert('Logout error: ' + error.message, 'danger');
-            }
+        if (response.ok) {
+            window.location.href = '/login';
+        } else {
+            showAlert('Logout failed', 'danger');
         }
-    </script>
-</body>
-</html>
+    } catch (error) {
+        showAlert('Logout error: ' + error.message, 'danger');
+    }
+}
+</script>
+{% endblock %}

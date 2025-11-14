@@ -1,46 +1,34 @@
 {
-  "UIA202511-001": {
-    "orderref": "UIA202511-001",
-    "error_message": "PowerCode API returned -1 - database connection error",
-    "failure_type": "powercode_creation_failed",
-    "timestamp": "2025-11-13T18:17:12.923647",
-    "customer_data": {
-      "firstname": "John",
-      "lastname": "Doe",
-      "email": "john.doe@example.com",
-      "city": "Bozeman",
-      "phone": "555-123-4567"
-    },
-    "retry_count": 1,
-    "resolved": false,
-    "first_failure": "2025-11-13T16:47:12.898491"
-  },
-  "UIA202511-002": {
-    "orderref": "UIA202511-002",
-    "error_message": "Utopia API timeout - request failed after 30 seconds",
+  "UIA202511-037896": {
+    "orderref": "UIA202511-037896",
+    "error_message": "Utopia API returned error - invalid orderref or API issue",
     "failure_type": "utopia_api_error",
-    "timestamp": "2025-11-13T13:47:12.898936",
+    "timestamp": "2025-11-13T19:26:31.309186",
     "customer_data": {},
     "retry_count": 0,
     "resolved": true,
-    "first_failure": "2025-11-13T13:47:12.898936",
-    "resolved_timestamp": "2025-11-13T18:49:06.494843",
+    "first_failure": "2025-11-13T19:26:31.309186",
+    "resolved_timestamp": "2025-11-13T19:28:57.856771",
     "resolution_note": ""
   },
-  "UIA202511-004": {
-    "orderref": "UIA202511-004",
-    "error_message": "Admin panel validation error - missing required fields",
-    "failure_type": "admin_creation_failed",
-    "timestamp": "2025-11-12T18:47:12.911043",
-    "customer_data": {
-      "firstname": "Bob",
-      "lastname": "Wilson",
-      "city": "Missoula"
-    },
+  "UIA202511-037897": {
+    "orderref": "UIA202511-037897",
+    "error_message": "Utopia API returned error - invalid orderref or API issue",
+    "failure_type": "utopia_api_error",
+    "timestamp": "2025-11-13T19:27:22.078321",
+    "customer_data": {},
+    "retry_count": 3,
+    "resolved": false,
+    "first_failure": "2025-11-13T19:27:20.126392"
+  },
+  "UIA202511-038158": {
+    "orderref": "UIA202511-038158",
+    "error_message": "Error processing API callback: HTTPSConnectionPool(host='management.theglobal.net', port=444): Max retries exceeded with url: /api/1/index.php (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x000001FED0DA5F90>, 'Connection to management.theglobal.net timed out. (connect timeout=None)'))",
+    "failure_type": "powercode_api_error",
+    "timestamp": "2025-11-13T19:35:39.843697",
+    "customer_data": {},
     "retry_count": 0,
-    "resolved": true,
-    "first_failure": "2025-11-12T18:47:12.911043",
-    "resolved_timestamp": "2025-11-13T18:47:12.934744",
-    "resolution_note": "Fixed validation logic in admin panel"
+    "resolved": false,
+    "first_failure": "2025-11-13T19:35:39.843697"
   }
 }

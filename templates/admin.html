@@ -1,849 +1,206 @@
-{% extends "layout.html" %}
-{% block content %}
+{% extends "base.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Utopia Customer Lookup - Admin</title>
-    
-    <!-- TailwindCSS CDN for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <style>
-        /* Custom scrollbar styling for log window */
-        .log-window::-webkit-scrollbar {
-            width: 8px;
-        }
-        .log-window::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        .log-window::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 4px;
-        }
-        .log-window::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
-    </style>
-</head>
-<body class="bg-gray-100 min-h-screen py-8">
-    <div class="container mx-auto max-w-4xl px-4">
-        <!-- Header -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-800 mb-2">Utopia Customer Lookup</h1>
-                    <p class="text-gray-600">Enter an order reference to retrieve customer information</p>
+{% block title %}Admin Dashboard - Utopia Customer Lookup{% endblock %}
+
+{% block navbar %}
+<nav class="bg-white shadow-md sticky top-0 z-50">
+    <div class="container mx-auto px-4">
+        <div class="flex items-center justify-between h-16">
+            <!-- Logo/Brand -->
+            <div class="flex items-center space-x-3">
+                <div class="gradient-bg p-2 rounded-lg">
+                    <i class="fas fa-database text-white text-xl"></i>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <a href="/admin/failures" 
-                       class="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-4 py-2 rounded-lg transition duration-200 flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                        </svg>
-                        Failures
-                    </a>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-800">Utopia Admin</h1>
+                    <p class="text-xs text-gray-500">Customer Lookup System</p>
+                </div>
+            </div>
+            
+            <!-- Navigation Links -->
+            <div class="flex items-center space-x-4">
+                <a href="/admin" class="flex items-center px-4 py-2 rounded-lg bg-blue-50 text-blue-600 font-semibold hover:bg-blue-100">
+                    <i class="fas fa-search mr-2"></i>
+                    Lookup
+                </a>
+                <a href="/admin/failures" class="flex items-center px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-semibold">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    Failures
+                </a>
+                <a href="/admin/ticket-editor" class="flex items-center px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-semibold">
+                    <i class="fas fa-file-alt mr-2"></i>Ticket Editor
+                </a>
+                
+                <!-- User Menu -->
+                <div class="flex items-center space-x-3 pl-4 border-l-2 border-gray-200">
                     <div class="text-right">
-                        <p class="text-sm text-gray-500">Logged in as</p>
-                        <p id="username" class="text-lg font-semibold text-gray-800">{{ session.get('username', 'Admin') }}</p>
+                        <p class="text-xs text-gray-500">Logged in as</p>
+                        <p class="text-sm font-semibold text-gray-800">{{ session.get('username', 'Admin') }}</p>
                     </div>
                     <button 
-                        id="logoutBtn"
-                        class="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-lg transition duration-200 flex items-center"
+                        onclick="logout()"
+                        class="flex items-center px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold"
                     >
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                        </svg>
+                        <i class="fas fa-sign-out-alt mr-2"></i>
                         Logout
                     </button>
                 </div>
             </div>
         </div>
+    </div>
+</nav>
+{% endblock %}
 
-        <!-- Input Form -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <form id="lookupForm" class="space-y-4">
-                <!-- Order Reference Input -->
-                <div>
-                    <label for="orderref" class="block text-sm font-medium text-gray-700 mb-2">
-                        Order Reference
-                    </label>
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- Welcome Banner -->
+    <div class="gradient-bg rounded-2xl shadow-xl p-8 mb-8 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-3xl font-bold mb-2">
+                    <i class="fas fa-search mr-3"></i>Customer Lookup
+                </h2>
+                <p class="text-blue-100">Enter an order reference to retrieve detailed customer information</p>
+            </div>
+            <div class="hidden md:block">
+                <i class="fas fa-users text-6xl opacity-20"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Form -->
+    <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 hover-lift">
+        <form id="lookupForm" class="space-y-6">
+            <div>
+                <label for="orderref" class="block text-sm font-semibold text-gray-700 mb-3">
+                    <i class="fas fa-file-alt mr-2 text-blue-600"></i>Order Reference
+                </label>
+                <div class="flex space-x-4">
                     <input 
                         type="text" 
                         id="orderref" 
                         name="orderref"
                         placeholder="e.g., UIA202511-038109"
-                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                        class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                         required
                     >
-                </div>
-
-                <!-- Submit Button -->
-                <div class="flex items-center space-x-4">
                     <button 
                         type="submit"
                         id="submitBtn"
-                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition duration-200 flex items-center"
+                        class="gradient-bg hover:shadow-lg text-white font-semibold px-8 py-3 rounded-lg flex items-center"
                     >
-                        <span id="btnText">Submit</span>
-                        <!-- Loading Spinner (hidden by default) -->
+                        <i id="btnIcon" class="fas fa-search mr-2"></i>
+                        <span id="btnText">Search</span>
                         <svg id="loadingSpinner" class="hidden animate-spin ml-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                     </button>
-                    
-                    <!-- Clear Button -->
                     <button 
                         type="button"
                         id="clearBtn"
-                        class="bg-gray-500 hover:bg-gray-600 text-white font-semibold px-6 py-2 rounded-lg transition duration-200"
+                        class="bg-gray-500 hover:bg-gray-600 text-white font-semibold px-6 py-3 rounded-lg flex items-center"
                     >
-                        Clear Log
+                        <i class="fas fa-times mr-2"></i>
+                        Clear
                     </button>
                 </div>
-            </form>
-        </div>
-
-        <!-- Log/Output Window -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-semibold text-gray-800">Output Log</h2>
-                <span id="logStatus" class="text-sm text-gray-500">Ready</span>
             </div>
-            
-            <!-- Scrollable log area -->
-            <div 
-                id="logWindow" 
-                class="log-window bg-gray-50 border border-gray-300 rounded-lg p-4 h-[700px] overflow-y-auto font-mono text-sm"
-            >
-                <div class="text-gray-400 italic">Waiting for input...</div>
+        </form>
+    </div>
+
+    <!-- Results Window -->
+    <div class="bg-white rounded-2xl shadow-lg p-8">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-2xl font-bold text-gray-800">
+                <i class="fas fa-list-alt mr-2 text-blue-600"></i>Results
+            </h3>
+            <span id="logStatus" class="px-4 py-2 rounded-full bg-gray-100 text-gray-600 text-sm font-semibold">
+                <i class="fas fa-circle text-gray-400 mr-2"></i>Ready
+            </span>
+        </div>
+        
+        <div 
+            id="logWindow" 
+            class="custom-scrollbar bg-gray-50 border-2 border-gray-200 rounded-xl p-6 min-h-[700px] max-h-[800px] overflow-y-auto"
+        >
+            <div class="text-center text-gray-400 py-20">
+                <i class="fas fa-inbox text-6xl mb-4 opacity-50"></i>
+                <p class="text-lg">Waiting for search query...</p>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Hidden Edit Modal Template -->
-    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 hidden">
-        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="bg-blue-600 text-white p-4 flex justify-between items-center sticky top-0">
-                <h3 class="text-xl font-bold">Edit Customer Data</h3>
-                <button id="closeModalBtn" class="text-white hover:text-gray-200" aria-label="Close modal">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
+<!-- Edit Modal -->
+<div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="gradient-bg text-white p-6 flex justify-between items-center sticky top-0">
+            <h3 class="text-2xl font-bold">
+                <i class="fas fa-edit mr-2"></i>Edit Customer Data
+            </h3>
+            <button id="closeModalBtn" class="text-white hover:text-gray-200 text-2xl" aria-label="Close modal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="editForm" class="p-8 space-y-6">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="edit-firstname" class="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
+                    <input type="text" id="edit-firstname" name="firstname" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="edit-lastname" class="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
+                    <input type="text" id="edit-lastname" name="lastname" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <div>
+                <label for="edit-email" class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                <input type="email" id="edit-email" name="email" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label for="edit-phone" class="block text-sm font-semibold text-gray-700 mb-2">Phone</label>
+                <input type="tel" id="edit-phone" name="phone" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label for="edit-address" class="block text-sm font-semibold text-gray-700 mb-2">Address</label>
+                <input type="text" id="edit-address" name="address" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+                <div>
+                    <label for="edit-city" class="block text-sm font-semibold text-gray-700 mb-2">City</label>
+                    <input type="text" id="edit-city" name="city" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="edit-state" class="block text-sm font-semibold text-gray-700 mb-2">State</label>
+                    <input type="text" id="edit-state" name="state" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="edit-zip" class="block text-sm font-semibold text-gray-700 mb-2">ZIP</label>
+                    <input type="text" id="edit-zip" name="zip" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+            <div>
+                <label for="edit-apt" class="block text-sm font-semibold text-gray-700 mb-2">Apartment/Unit</label>
+                <input type="text" id="edit-apt" name="apt" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label for="edit-siteid" class="block text-sm font-semibold text-gray-700 mb-2">Site ID</label>
+                <input type="text" id="edit-siteid" name="siteid" class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg bg-gray-100" readonly>
+            </div>
+            <div class="flex space-x-3 pt-4">
+                <button type="button" id="saveChangesBtn" class="flex-1 gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg">
+                    <i class="fas fa-save mr-2"></i>Save Changes
+                </button>
+                <button type="button" id="cancelModalBtn" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold px-6 py-3 rounded-lg">
+                    <i class="fas fa-times mr-2"></i>Cancel
                 </button>
             </div>
-            <form id="editForm" class="p-6 space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="edit-firstname" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                        <input type="text" id="edit-firstname" name="firstname" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label for="edit-lastname" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                        <input type="text" id="edit-lastname" name="lastname" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    </div>
-                </div>
-                <div>
-                    <label for="edit-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" id="edit-email" name="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label for="edit-phone" class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                    <input type="tel" id="edit-phone" name="phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label for="edit-address" class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                    <input type="text" id="edit-address" name="address" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div class="grid grid-cols-3 gap-4">
-                    <div>
-                        <label for="edit-city" class="block text-sm font-medium text-gray-700 mb-1">City</label>
-                        <input type="text" id="edit-city" name="city" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label for="edit-state" class="block text-sm font-medium text-gray-700 mb-1">State</label>
-                        <input type="text" id="edit-state" name="state" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label for="edit-zip" class="block text-sm font-medium text-gray-700 mb-1">ZIP</label>
-                        <input type="text" id="edit-zip" name="zip" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    </div>
-                </div>
-                <div>
-                    <label for="edit-apt" class="block text-sm font-medium text-gray-700 mb-1">Apartment/Unit</label>
-                    <input type="text" id="edit-apt" name="apt" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label for="edit-siteid" class="block text-sm font-medium text-gray-700 mb-1">Site ID</label>
-                    <input type="text" id="edit-siteid" name="siteid" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" readonly>
-                </div>
-                <div class="flex space-x-3 pt-4">
-                    <button type="button" id="saveChangesBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition">
-                        Save Changes
-                    </button>
-                    <button type="button" id="cancelModalBtn" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded-lg transition">
-                        Cancel
-                    </button>
-                </div>
-            </form>
-        </div>
+        </form>
     </div>
+</div>
+{% endblock %}
 
-    <!-- JavaScript for AJAX functionality -->
-    <script>
-        // Get DOM elements
-        const form = document.getElementById('lookupForm');
-        const orderrefInput = document.getElementById('orderref');
-        const submitBtn = document.getElementById('submitBtn');
-        const btnText = document.getElementById('btnText');
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        const clearBtn = document.getElementById('clearBtn');
-        const logWindow = document.getElementById('logWindow');
-        const logStatus = document.getElementById('logStatus');
-
-        /**
-         * Format JSON data into readable HTML
-         * @param {Object} data - The customer data object
-         * @returns {string} - Formatted HTML string
-         */
-        function formatCustomerData(data, orderref) {
-            const selectedPlan = (currentServicePlans[orderref] || getServicePlan(data));
-            return `
-                <div class="space-y-4">
-                    <!-- Utopia Data Section -->
-                    <div class="bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
-                        <div class="flex items-center justify-between mb-3">
-                            <h3 class="text-lg font-bold text-blue-700">📋 Utopia Order Data</h3>
-                            <div class="flex items-center space-x-3">
-                                <div class="flex space-x-2">
-                                    <button 
-                                        onclick="editPowerCodeData('${orderref}')"
-                                        class="bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold px-3 py-1 rounded-lg transition duration-200 flex items-center"
-                                    >
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                        </svg>
-                                        Edit Data
-                                    </button>
-                                    <button 
-                                        onclick="sendToPowerCode('${orderref}')"
-                                        class="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-3 py-1 rounded-lg transition duration-200 flex items-center"
-                                    >
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                                        </svg>
-                                        Send to PowerCode
-                                    </button>
-                                    <button 
-                                        onclick="toggleRawJson('${orderref}')"
-                                        id="rawJsonBtn-${orderref}"
-                                        class="bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold px-3 py-1 rounded-lg transition duration-200 flex items-center"
-                                    >
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-                                        </svg>
-                                        See RAW JSON
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="space-y-3">
-                            <div class="border-b border-blue-200 pb-2">
-                                <span class="font-bold text-blue-600">Status:</span> 
-                                <span class="text-gray-800">${data.status || 'N/A'}</span>
-                            </div>
-                            
-                            <div class="border-b border-blue-200 pb-2">
-                                <span class="font-bold text-blue-600">Order Source:</span> 
-                                <span class="text-gray-800">${data.ordersource || 'N/A'}</span>
-                            </div>
-
-                            ${data.customer ? `
-                            <div class="border-b border-blue-200 pb-2">
-                                <div class="font-bold text-blue-600 mb-1">Customer Information:</div>
-                                <div class="ml-4 space-y-1">
-                                    <div><span class="font-semibold">Name:</span> ${data.customer.firstname} ${data.customer.lastname}</div>
-                                    <div><span class="font-semibold">Email:</span> ${data.customer.email}</div>
-                                    <div><span class="font-semibold">Phone:</span> ${data.customer.phone}</div>
-                                </div>
-                            </div>
-                            ` : ''}
-
-                            ${data.address ? `
-                            <div class="border-b border-blue-200 pb-2">
-                                <div class="font-bold text-blue-600 mb-1">Service Address:</div>
-                                <div class="ml-4 space-y-1">
-                                    <div><span class="font-semibold">Site ID:</span> ${data.address.siteid || 'N/A'}</div>
-                                    <div><span class="font-semibold">Address:</span> ${data.address.address}</div>
-                                    ${data.address.apt ? `<div><span class="font-semibold">Apt:</span> ${data.address.apt}</div>` : ''}
-                                    <div><span class="font-semibold">City:</span> ${data.address.city}, ${data.address.state} ${data.address.zip}</div>
-                                </div>
-                            </div>
-                            ` : ''}
-
-                            ${data.orderitems && data.orderitems.length > 0 ? `
-                            <div class="border-b border-blue-200 pb-2">
-                                <div class="font-bold text-blue-600 mb-1">Order Items:</div>
-                                <div class="ml-4 space-y-2">
-                                    ${data.orderitems.map(item => `
-                                        <div class="bg-white p-2 rounded border border-blue-100">
-                                            <div><span class="font-semibold">Description:</span> ${item.description}</div>
-                                            <div><span class="font-semibold">Quantity:</span> ${item.qty} | <span class="font-semibold">Cost:</span> ${item.totalcost}</div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                            ` : ''}
-
-                            ${data.termsagreement ? `
-                            <div class="pb-2">
-                                <div class="font-bold text-blue-600 mb-1">Terms Agreement:</div>
-                                <div class="ml-4 space-y-1">
-                                    ${data.termsagreement.infrastructure_terms_agree_date ? `<div><span class="font-semibold">Infrastructure Terms:</span> ${data.termsagreement.infrastructure_terms_agree_date} (${data.termsagreement.infrastructure_terms_agree_method || 'N/A'})</div>` : ''}
-                                    ${data.termsagreement.sp_terms_agree_date ? `<div><span class="font-semibold">Service Provider Terms:</span> ${data.termsagreement.sp_terms_agree_date} (${data.termsagreement.sp_terms_agree_method || 'N/A'})</div>` : ''}
-                                </div>
-                            </div>
-                            ` : ''}
-                        </div>
-                    </div>
-
-                    <!-- PowerCode Data Section (Initially Hidden) -->
-                    <div id="rawJsonSection-${orderref}" class="bg-green-50 p-4 rounded-lg border-2 border-green-200 hidden">
-                        <div class="mb-3">
-                            <h3 class="text-lg font-bold text-green-700">Utopia JSON</h3>
-                        </div>
-                        
-                        <div id="pcData-${orderref}" class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm overflow-x-auto">
-                            <pre class="whitespace-pre-wrap"></pre>
-                        </div>
-
-                        <div class="mt-3 space-y-2">
-                            <div class="font-semibold text-green-700">This data would be used to:</div>
-                            <ul class="ml-6 space-y-1 text-sm text-gray-700">
-                                <li>✓ Create customer account in PowerCode</li>
-                                <li>✓ Add service plan: <strong>${getServicePlan(data)}</strong></li>
-                                <li>✓ Add Bond fee service</li>
-                                <li>✓ Create support ticket for customer: <strong>${data.customer?.firstname || ''} ${data.customer?.lastname || ''}</strong></li>
-                                <li>✓ Send email notification</li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div class="text-xs text-gray-500 text-center">
-                        💡 Full raw JSON data available in browser console
-                    </div>
-                </div>
-            `;
-        }
-
-        
-
-        /**
-         * Get service plan description from order items
-         * @param {Object} data - Utopia customer data
-         * @returns {string} - Service plan description
-         */
-        function getServicePlan(data) {
-            if (data.orderitems && data.orderitems.length > 0) {
-                return data.orderitems[0].description || "250 Mbps (default)";
-            }
-            return "250 Mbps (default)";
-        }
-
-        /**
-         * Toggle RAW JSON section visibility
-         * @param {string} orderref - Order reference
-         */
-        function toggleRawJson(orderref) {
-            const section = document.getElementById(`rawJsonSection-${orderref}`);
-            const button = document.getElementById(`rawJsonBtn-${orderref}`);
-            
-            if (!section || !button) return;
-            
-            const isHidden = section.classList.contains('hidden');
-            
-            if (isHidden) {
-                // Show the section
-                section.classList.remove('hidden');
-                button.innerHTML = `
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                    Hide RAW JSON
-                `;
-                button.classList.remove('bg-gray-600', 'hover:bg-gray-700');
-                button.classList.add('bg-red-600', 'hover:bg-red-700');
-            } else {
-                // Hide the section
-                section.classList.add('hidden');
-                button.innerHTML = `
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-                    </svg>
-                    See RAW JSON
-                `;
-                button.classList.remove('bg-red-600', 'hover:bg-red-700');
-                button.classList.add('bg-gray-600', 'hover:bg-gray-700');
-            }
-        }
-
-        /**
-         * Update the Utopia Order Data display with new data
-         * @param {string} orderref - Order reference
-         * @param {Object} data - Updated customer data
-         */
-        function updateUtopiaDataDisplay(orderref, data) {
-            // Find the log entry that contains this orderref's data
-            const logEntries = logWindow.querySelectorAll('.mb-4');
-            
-            logEntries.forEach(entry => {
-                // Check if this entry contains our orderref data by looking for the specific structure
-                const utopiaSection = entry.querySelector('.bg-blue-50');
-                if (utopiaSection) {
-                    // Check if this section contains buttons with our orderref
-                    const editButton = utopiaSection.querySelector(`button[onclick="editPowerCodeData('${orderref}')"]`);
-                    if (editButton) {
-                        // Found the correct section, regenerate the entire content with updated data
-                        const parentDiv = entry.querySelector('.space-y-4');
-                        if (parentDiv) {
-                            parentDiv.innerHTML = formatCustomerData(data, orderref);
-                            
-                            // Re-populate the raw JSON display if it's visible
-                            setTimeout(() => {
-                                const pcDataElement = document.getElementById(`pcData-${orderref}`);
-                                if (pcDataElement) {
-                                    const preElement = pcDataElement.querySelector('pre');
-                                    if (preElement) {
-                                        preElement.textContent = JSON.stringify(data, null, 2);
-                                    }
-                                }
-                            }, 10);
-                        }
-                    }
-                }
-            });
-        }
-
-    // Store customer data globally for edit/send operations
-    let currentCustomerData = {};
-    let currentServicePlans = {}; // Store service plans for each order
-    let currentEditingOrderref = null; // Track which order is being edited
-
-        /**
-         * Edit PowerCode data - Opens modal and populates fields safely
-         * @param {string} orderref - Order reference
-         */
-        function editPowerCodeData(orderref) {
-            const rawData = currentCustomerData[orderref];
-            if (!rawData) {
-                alert('No customer data found. Please search again.');
-                return;
-            }
-
-            const customer = rawData.customer || {};
-            const address = rawData.address || {};
-            
-            // Store current editing context
-            currentEditingOrderref = orderref;
-            
-            // Safely populate form fields using textContent to prevent XSS
-            document.getElementById('edit-firstname').value = customer.firstname || '';
-            document.getElementById('edit-lastname').value = customer.lastname || '';
-            document.getElementById('edit-email').value = customer.email || '';
-            document.getElementById('edit-phone').value = customer.phone || '';
-            document.getElementById('edit-address').value = address.address || '';
-            document.getElementById('edit-city').value = address.city || '';
-            document.getElementById('edit-state').value = address.state || '';
-            document.getElementById('edit-zip').value = address.zip || '';
-            document.getElementById('edit-apt').value = address.apt || '';
-            document.getElementById('edit-siteid').value = address.siteid || '';
-            
-            // Show modal and focus first input for accessibility
-            const modal = document.getElementById('editModal');
-            modal.classList.remove('hidden');
-            modal.setAttribute('aria-modal', 'true');
-            modal.setAttribute('role', 'dialog');
-            document.getElementById('edit-firstname').focus();
-            
-            // Trap focus within modal
-            trapFocusInModal();
-        }
-
-        /**
-         * Close edit modal with proper cleanup
-         */
-        function closeEditModal() {
-            const modal = document.getElementById('editModal');
-            if (modal) {
-                modal.classList.add('hidden');
-                modal.removeAttribute('aria-modal');
-                modal.removeAttribute('role');
-                currentEditingOrderref = null;
-            }
-        }
-
-        /**
-         * Trap focus within modal for accessibility
-         */
-        function trapFocusInModal() {
-            const modal = document.getElementById('editModal');
-            const focusableElements = modal.querySelectorAll(
-                'button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            );
-            const firstElement = focusableElements[0];
-            const lastElement = focusableElements[focusableElements.length - 1];
-
-            modal.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    closeEditModal();
-                    return;
-                }
-
-                if (e.key === 'Tab') {
-                    if (e.shiftKey) {
-                        if (document.activeElement === firstElement) {
-                            lastElement.focus();
-                            e.preventDefault();
-                        }
-                    } else {
-                        if (document.activeElement === lastElement) {
-                            firstElement.focus();
-                            e.preventDefault();
-                        }
-                    }
-                }
-            });
-        }
-
-        /**
-         * Save edited data with proper validation and safety
-         */
-        function saveEditedData() {
-            if (!currentEditingOrderref) {
-                alert('Error: No order reference found.');
-                return;
-            }
-
-            const form = document.getElementById('editForm');
-            
-            // Validate required fields
-            const requiredFields = ['edit-firstname', 'edit-lastname', 'edit-email'];
-            let isValid = true;
-            
-            requiredFields.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                if (!field.value.trim()) {
-                    field.classList.add('border-red-500');
-                    isValid = false;
-                } else {
-                    field.classList.remove('border-red-500');
-                }
-            });
-            
-            if (!isValid) {
-                alert('Please fill in all required fields (Name and Email).');
-                return;
-            }
-
-            // Update the stored raw data (nested structure) safely
-            const rawData = currentCustomerData[currentEditingOrderref] || {};
-            rawData.customer = rawData.customer || {};
-            rawData.address = rawData.address || {};
-            
-            // Use textContent-style access to prevent XSS
-            rawData.customer.firstname = document.getElementById('edit-firstname').value.trim();
-            rawData.customer.lastname = document.getElementById('edit-lastname').value.trim();
-            rawData.customer.email = document.getElementById('edit-email').value.trim();
-            rawData.customer.phone = document.getElementById('edit-phone').value.trim();
-            rawData.address.address = document.getElementById('edit-address').value.trim();
-            rawData.address.city = document.getElementById('edit-city').value.trim();
-            rawData.address.state = document.getElementById('edit-state').value.trim();
-            rawData.address.zip = document.getElementById('edit-zip').value.trim();
-            rawData.address.apt = document.getElementById('edit-apt').value.trim();
-            rawData.address.siteid = document.getElementById('edit-siteid').value.trim();
-            rawData.orderref = currentEditingOrderref;
-            
-            // Update global storage
-            currentCustomerData[currentEditingOrderref] = rawData;
-            
-            // Update the Utopia Order Data display
-            updateUtopiaDataDisplay(currentEditingOrderref, rawData);
-            
-            // Update the RAW JSON display safely
-            const pcDataElement = document.getElementById(`pcData-${currentEditingOrderref}`);
-            if (pcDataElement) {
-                // Use textContent to prevent XSS
-                const preElement = pcDataElement.querySelector('pre');
-                if (preElement) {
-                    preElement.textContent = JSON.stringify(rawData, null, 2);
-                }
-            }
-            
-            // Close modal
-            closeEditModal();
-            
-            // Show success message
-            addLogEntry('✓ Customer data updated successfully. The displayed information has been refreshed.', 'success');
-        }
-
-        /**
-         * Send customer data to PowerCode
-         * @param {string} orderref - Order reference
-         */
-        async function sendToPowerCode(orderref) {
-            const rawData = currentCustomerData[orderref];
-            const servicePlan = currentServicePlans[orderref] || '250 Mbps';
-            
-            if (!rawData) {
-                alert('No customer data found. Please search again.');
-                return;
-            }
-
-            // Confirm before sending
-            const c = rawData.customer || {};
-            if (!confirm(`Create customer in PowerCode?\n\nName: ${c.firstname || ''} ${c.lastname || ''}\nEmail: ${c.email || ''}\nService Plan: ${servicePlan}\n\nThis will:\n• Create customer account\n• Add service plan: ${servicePlan}\n• Add Bond fee\n• Create support ticket\n• Send email notification`)) {
-                return;
-            }
-
-            addLogEntry(`Sending customer data to PowerCode for orderref: <strong>${orderref}</strong>...`, 'info');
-            logStatus.textContent = 'Creating...';
-            logStatus.className = 'text-sm text-blue-600';
-
-            try {
-                const response = await fetch('/api/create-customer', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        orderref: orderref,
-                        customer_data: rawData,
-                        service_plan: servicePlan  // Send service plan from frontend
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    const successMsg = `
-                        <div class="space-y-2">
-                            <div class="text-xl font-bold text-green-600">✓ Customer Created Successfully!</div>
-                            <div><strong>PowerCode ID:</strong> ${result.customer_id}</div>
-                            <div><strong>Service Plan:</strong> ${result.service_plan || 'N/A'}</div>
-                            <div><strong>Ticket:</strong> ${result.ticket || 'Created'}</div>
-                            <div class="text-sm text-gray-600 mt-2">Email notification sent to admin.</div>
-                        </div>
-                    `;
-                    addLogEntry(successMsg, 'success');
-                    logStatus.textContent = 'Success';
-                    logStatus.className = 'text-sm text-green-600';
-                } else {
-                    addLogEntry(`[ERROR] ${result.error}`, 'error');
-                    logStatus.textContent = 'Error';
-                    logStatus.className = 'text-sm text-red-600';
-                }
-
-            } catch (error) {
-                addLogEntry(`[ERROR] Failed to create customer: ${error.message}`, 'error');
-                logStatus.textContent = 'Connection Error';
-                logStatus.className = 'text-sm text-red-600';
-                console.error('Create customer error:', error);
-            }
-        }
-
-        /**
-         * Add a log entry to the log window
-         * @param {string} message - The message to log
-         * @param {string} type - The type of message: 'info', 'success', 'error'
-         */
-        function addLogEntry(message, type = 'info') {
-            const timestamp = new Date().toLocaleTimeString();
-            const colors = {
-                info: 'text-gray-700',
-                success: 'text-green-700',
-                error: 'text-red-700'
-            };
-            
-            const entry = document.createElement('div');
-            entry.className = `mb-4 pb-4 border-b border-gray-200 ${colors[type]}`;
-            entry.innerHTML = `
-                <div class="text-xs text-gray-500 mb-1">[${timestamp}]</div>
-                <div>${message}</div>
-            `;
-            
-            // Clear "waiting" message if it exists
-            if (logWindow.querySelector('.text-gray-400')) {
-                logWindow.innerHTML = '';
-            }
-            
-            logWindow.appendChild(entry);
-            // Auto-scroll to bottom
-            logWindow.scrollTop = logWindow.scrollHeight;
-        }
-
-        /**
-         * Handle form submission
-         */
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const orderref = orderrefInput.value.trim();
-            
-            if (!orderref) {
-                addLogEntry('[ERROR] Please enter an order reference', 'error');
-                return;
-            }
-
-            // Update UI to loading state
-            submitBtn.disabled = true;
-            btnText.textContent = 'Loading...';
-            loadingSpinner.classList.remove('hidden');
-            logStatus.textContent = 'Querying...';
-            logStatus.className = 'text-sm text-blue-600';
-
-            addLogEntry(`Querying orderref: <strong>${orderref}</strong>`, 'info');
-
-            try {
-                // Make AJAX request to Flask backend
-                const response = await fetch('/api/lookup', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ orderref: orderref })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    // Log raw JSON to console for debugging
-                    console.log('Customer Data:', result.data);
-                    
-                    // Ensure orderref is attached to the data
-                    result.data.orderref = orderref;
-                    
-                    // Store RAW customer data for edit/send operations
-                    currentCustomerData[orderref] = result.data;
-                    
-                    // Store service plan information
-                    currentServicePlans[orderref] = getServicePlan(result.data);
-                    
-                    // Display formatted data in log window
-                    addLogEntry(formatCustomerData(result.data, orderref), 'success');
-                    
-                    // Safely populate the JSON display after DOM is created
-                    setTimeout(() => {
-                        const pcDataElement = document.getElementById(`pcData-${orderref}`);
-                        if (pcDataElement) {
-                            const preElement = pcDataElement.querySelector('pre');
-                            if (preElement) {
-                                preElement.textContent = JSON.stringify(result.data, null, 2);
-                            }
-                        }
-                    }, 10);
-                    
-                    logStatus.textContent = 'Success';
-                    logStatus.className = 'text-sm text-green-600';
-                } else {
-                    // Display error message
-                    addLogEntry(`[ERROR] ${result.error}`, 'error');
-                    logStatus.textContent = 'Error';
-                    logStatus.className = 'text-sm text-red-600';
-                }
-
-            } catch (error) {
-                // Handle network or other errors
-                addLogEntry(`[ERROR] Failed to connect to server: ${error.message}`, 'error');
-                logStatus.textContent = 'Connection Error';
-                logStatus.className = 'text-sm text-red-600';
-                console.error('Fetch error:', error);
-            } finally {
-                // Reset button state
-                submitBtn.disabled = false;
-                btnText.textContent = 'Submit';
-                loadingSpinner.classList.add('hidden');
-                
-                // Reset status after 3 seconds
-                setTimeout(() => {
-                    logStatus.textContent = 'Ready';
-                    logStatus.className = 'text-sm text-gray-500';
-                }, 3000);
-            }
-        });
-
-        /**
-         * Clear log window
-         */
-        clearBtn.addEventListener('click', () => {
-            logWindow.innerHTML = '<div class="text-gray-400 italic">Waiting for input...</div>';
-            logStatus.textContent = 'Ready';
-            logStatus.className = 'text-sm text-gray-500';
-        });
-
-        // Focus on input field when page loads
-        window.addEventListener('load', () => {
-            orderrefInput.focus();
-            
-            // Add modal event listeners
-            setupModalEventListeners();
-        });
-
-        /**
-         * Setup modal event listeners for better accessibility and safety
-         */
-        function setupModalEventListeners() {
-            // Close modal events
-            document.getElementById('closeModalBtn').addEventListener('click', closeEditModal);
-            document.getElementById('cancelModalBtn').addEventListener('click', closeEditModal);
-            
-            // Save changes event
-            document.getElementById('saveChangesBtn').addEventListener('click', saveEditedData);
-            
-            // ESC key and backdrop click to close modal
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && currentEditingOrderref) {
-                    closeEditModal();
-                }
-            });
-            
-            // Close modal when clicking backdrop
-            document.getElementById('editModal').addEventListener('click', (e) => {
-                if (e.target.id === 'editModal') {
-                    closeEditModal();
-                }
-            });
-        }
-
-        /**
-         * Handle logout
-         */
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-            try {
-                const response = await fetch('/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    // Redirect to login page
-                    window.location.href = '/login';
-                }
-            } catch (error) {
-                console.error('Logout error:', error);
-                // Force redirect even on error
-                window.location.href = '/login';
-            }
-        });
-    </script>
-</body>
-</html>
-
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 {% endblock %}

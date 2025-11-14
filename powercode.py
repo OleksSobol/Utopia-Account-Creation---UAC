@@ -115,6 +115,7 @@ def search_powercode_customers(searchString):
 
 ### Tickets ###
 def create_powercode_ticket(customer_id, customer_name=""):
+    
     # Path to the folder and the description file
     folder_path = 'ticket_descriptions'
     description_file = os.path.join(folder_path, 'new_desc.txt')
