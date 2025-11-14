@@ -5,10 +5,9 @@ import time
 import config
 import requests
 
-from config import PC_VERIFY_SSL
+from config import PC_VERIFY_SSL, CUSTOMER_PORTAL_PASSWORD
 
-def create_powercode_account(customer_info, customer_portal_password="WelcomeToGlobalNet", max_retries=3,
-                             retry_delay=5):
+def create_powercode_account(customer_info, max_retries=3, retry_delay=5):
     if customer_info['state'] == "Montana":
         customer_info['state'] = "MT"
 
@@ -38,7 +37,7 @@ def create_powercode_account(customer_info, customer_portal_password="WelcomeToG
         "gracePeriodDays": 10,
         "customerNotes": notes,
         "customerPortalUsername": customer_info['email'],
-        "customerPortalPassword": customer_portal_password,
+        "customerPortalPassword": CUSTOMER_PORTAL_PASSWORD,
         "phone": json.dumps([
             {
                 "Type": "Home",

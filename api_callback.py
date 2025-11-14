@@ -207,91 +207,30 @@ class UtopiaAPIHandler:
             logger.info(f"Admin creating customer for orderref: {orderref}")
             logger.info(pretty_log_json(customer_data, "Customer data to create"))
             
-            # Check if customer already exists in PowerCode
-            firstname = customer_data.get("firstname", "")
-            lastname = customer_data.get("lastname", "")
-            customer_first_last_name = f"{firstname} {lastname}".strip()
-            
-            # Get billing info from customer data for duplicate check
-            city = customer_data.get('city', '')
-            
-            logger.info("Checking if customer exists in PowerCode...")
-            customers_list = PowerCode.search_powercode_customers(customer_first_last_name)["customers"]
-            
-            # Try to find a match by name and city
-            matching_customer = None
-            for customer in customers_list:
-                pc_name = customer.get("CompanyName", "")
-                pc_city = customer.get("City", "")
-                # Match by full name and city
-                if pc_name == customer_first_last_name and pc_city == city:
-                    matching_customer = customer
-                    break
-            
-            if matching_customer:
-                logger.warning(f"Customer already exists in PowerCode: {matching_customer.get('CustomerID')}")
-                return jsonify({
-                    'success': False,
-                    'error': f'Customer already exists in PowerCode with ID: {matching_customer.get("CustomerID")}',
-                    'customer_id': matching_customer.get('CustomerID')
-                }), 409
-            
-            # Create customer in PowerCode
-            logger.info(f"Creating PowerCode account for orderref={orderref}")
-            customer_id = PowerCode.create_powercode_account(
-                customer_data,
-                customer_portal_password=CUSTOMER_PORTAL_PASSWORD
+            # Use shared customer creation logic
+            success, customer_id, error_message, ticket_id = self.process_customer_creation(
+                customer_data, orderref, service_plan
             )
             
-            if customer_id == -1:
-                logger.error(f"Failed to create customer in PowerCode for orderref: {orderref}")
-                return jsonify({
-                    'success': False,
-                    'error': 'Failed to create customer in PowerCode. Check server logs.'
-                }), 500
-            
-            # Add service plans based on service_plan from frontend
-            service_plan_mapping = {
-                "1 Gbps": SERVICE_PLAN_1GBPS_ID,
-                "250 Mbps": SERVICE_PLAN_250MBPS_ID,
-            }
-            
-            additional_service_plan_mapping = {
-                "Bond fee": SERVICE_PLAN_BOND_FEE_ID,
-            }
-            
-            # Add primary service plan using the service plan from frontend
-            service_id_utopia = service_plan_mapping.get(service_plan, SERVICE_PLAN_250MBPS_ID)
-            service_plan_respond_utopia = PowerCode.add_customer_service_plan(customer_id, service_id_utopia)
-            logger.info(f"Service plan '{service_plan}' added: {service_plan_respond_utopia}")
-            
-            # Add Bond fee
-            additional_plan = "Bond fee"
-            service_id_additional = additional_service_plan_mapping.get(additional_plan, None)
-            if service_id_additional:
-                service_plan_respond_additional = PowerCode.add_customer_service_plan(customer_id, service_id_additional)
-                logger.info(f"Additional service added: {service_plan_respond_additional}")
-            
-            # Create PowerCode Ticket
-            ticket_creation_response_pc = PowerCode.create_powercode_ticket(customer_id, customer_data["firstname"])
-            logger.info(f'Ticket: {ticket_creation_response_pc}, created in PowerCode')
-            
-            # Send Email
-            formatted_customer_info = self.format_contact_info(customer_data)
-            self.send_email(
-                f"Customer created - {customer_first_last_name} PC#{customer_id}",
-                f'Powercode id: {PC_URL}:444/index.php?q&page=/customers/_view.php&customerid={customer_id}\n\n{formatted_customer_info}',
-                orderref
-            )
-            
-            logger.info(f"Customer created successfully - Powercode: {customer_id}, Utopia siteID: {customer_data.get('siteid', 'N/A')}")
+            if not success:
+                if customer_id != -1:  # Customer exists
+                    return jsonify({
+                        'success': False,
+                        'error': error_message,
+                        'customer_id': customer_id
+                    }), 409
+                else:  # Creation failed
+                    return jsonify({
+                        'success': False,
+                        'error': error_message
+                    }), 500
             
             # Return success response
             return jsonify({
                 'success': True,
                 'customer_id': customer_id,
                 'message': f'Customer created successfully in PowerCode with ID: {customer_id}',
-                'ticket': ticket_creation_response_pc,
+                'ticket': ticket_id,
                 'service_plan': service_plan
             }), 200
             
@@ -379,127 +318,188 @@ class UtopiaAPIHandler:
             )
             return
 
-        # NOW it's safe to extract Utopia customer info
-        utopia_name = customer_from_utopia.get('billingaddress', {}).get('name', '')
+        # Transform Utopia data to PowerCode format
+        customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
+        
+        # Extract customer info for duplicate check (using billing address for webhook flow)
+        # utopia_name = customer_from_utopia.get('billingaddress', {}).get('name', '')
         utopia_city = customer_from_utopia.get('billingaddress', {}).get('city', '')
-
-        logger.info("Searching in PC...")
-
+        
         firstname = customer_from_utopia.get("customer", {}).get("firstname", "")
         lastname = customer_from_utopia.get("customer", {}).get("lastname", "")
-        customer_first_last_name = f"{firstname} {lastname}".strip()
+        
+        # Use shared duplicate checking logic
+        logger.info("Searching customer in Powercode...")
+        exists, matching_customer = self.check_customer_exists(firstname, lastname, utopia_city)
 
-        customers_list = PowerCode.search_powercode_customers(customer_first_last_name)["customers"]
-        logger.info(customers_list)
-
-        # Try to find a match by comparing names
-        matching_customer = None
-
-        for customer in customers_list:
-            pc_name = customer.get("CompanyName", "")
-            pc_city = customer.get("City", "")
-            if pc_name == utopia_name and pc_city == utopia_city:
-                matching_customer = customer
-                break
-
-        # check by name if customer exist in Powercode.
-        if matching_customer:
-            logger.info(f"Customer exist, doing nothing... {customers_list}")
-            customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
-            formatted_customer_to_powercode = self.format_contact_info(customer_to_powercode)
-
+        if exists:
+            # Customer exists - send notification
+            logger.info(f"Customer exists, doing nothing... Customer ID: {matching_customer.get('CustomerID')}")
+            formatted_customer_info = self.format_contact_info(customer_to_powercode)
             self.send_email(
-                f"Failed to create customer: Customer exist, Powercode ID {customers_list[0]['CustomerID']}",
-                f'{formatted_customer_to_powercode}',
+                f"Failed to create customer: Customer exist, Powercode ID {matching_customer['CustomerID']}",
+                f'{formatted_customer_info}',
                 orderref,
             )
         else:
-            self.create_new_customer(customer_from_utopia, orderref)
+            # Create new customer using shared logic
+            self.handle_webhook_customer_creation(customer_from_utopia, orderref)
 
-    def create_new_customer(self, customer_from_utopia, orderref):
+    def handle_webhook_customer_creation(self, customer_from_utopia, orderref):
         """
-        Create a new customer in PowerCode with service plans and ticket
+        Handle customer creation from webhook (Utopia API data)
+        Transforms Utopia data and processes customer creation workflow
         """
+        # Transform Utopia data to PowerCode format
         customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
         formatted_customer_to_powercode = self.format_contact_info(customer_to_powercode)
         
-        logger.warning(f"Creating customer in PC with data: \n{formatted_customer_to_powercode}")
+        logger.info(f"Creating customer in Powercode with next data: \n{formatted_customer_to_powercode}")
 
-        logger.info(pretty_log_json(customer_from_utopia, "Utopia customer data"))
-        customer_first_last_name = (
-                    customer_from_utopia["customer"]["firstname"] + " " + customer_from_utopia["customer"]["lastname"])
+        # Determine service plan from Utopia order items
+        # utopia_customers_service_plan = "250 Mbps"  # default
+        if "orderitems" in customer_from_utopia and customer_from_utopia["orderitems"]:
+            utopia_customers_service_plan = customer_from_utopia["orderitems"][0].get("description", utopia_customers_service_plan)
 
-        logger.info(f"Creating Powercode account for orderref={orderref}")
-        customer_id = PowerCode.create_powercode_account(
-            customer_to_powercode,
-            customer_portal_password=CUSTOMER_PORTAL_PASSWORD
+        # Use shared customer creation logic
+        success, customer_id, error_message, ticket_id = self.process_customer_creation(
+            customer_to_powercode, orderref, utopia_customers_service_plan
         )
-        logger.info(customer_id)
 
-        if customer_id == -1:
-            self.send_email(
-                f"Failed to create customer: {customer_from_utopia}",
-                f'Check Powercode Logs, because API returns -1 when something wrong. \n{formatted_customer_to_powercode}',
-                orderref
-            )
-        else:
-            # ADD SERVICE PLAN
-            # Service plan mapping for Utopia and Powercode ID of plans
-            service_plan_mapping = {
-                "1 Gbps": SERVICE_PLAN_1GBPS_ID,
-                "250 Mbps": SERVICE_PLAN_250MBPS_ID,
-            }
-
-            # Additional plans
-            additional_service_plan_mapping = {
-                "Bond fee": SERVICE_PLAN_BOND_FEE_ID,
-            }
-
-            # Get Utopia service plan
-            utopia_customers_service_plan = customer_from_utopia["orderitems"][0][
-                "description"] if "orderitems" in customer_from_utopia else None
-
-            # Get the service ID for the Utopia plan (with a default if not found)
-            service_id_utopia = service_plan_mapping.get(utopia_customers_service_plan,
-                                                         default = SERVICE_PLAN_250MBPS_ID)
-
-            # Add Utopia service plan
-            service_plan_respond_utopia = PowerCode.add_customer_service_plan(
-                customer_id,
-                service_id_utopia
-            )
-
-            logger.info(f"Utopia service added: {service_plan_respond_utopia}")
-
-            # Add an additional plan
-            additional_plan = "Bond fee" 
-            service_id_additional = additional_service_plan_mapping.get(additional_plan, None)
-
-            if service_id_additional:
-                service_plan_respond_additional = PowerCode.add_customer_service_plan(
-                    customer_id,
-                    service_id_additional
+        if not success:
+            if customer_id != -1:
+                # Customer exists (shouldn't happen here, but handle it)
+                formatted_customer_info = self.format_contact_info(customer_to_powercode)
+                self.send_email(
+                    f"Failed to create customer: Customer exists, Powercode ID {customer_id}",
+                    f'{formatted_customer_info}',
+                    orderref,
                 )
-                logger.info(f"Additional service added: {service_plan_respond_additional}")
+            else:
+                # Creation failed
+                self.send_email(
+                    f"Failed to create customer: {customer_from_utopia}",
+                    f'Check Powercode Logs, because API returns -1 when something wrong. \n{formatted_customer_to_powercode}',
+                    orderref
+                )
+        else:
+            # Success is already logged and email sent by process_customer_creation
+            logger.info(f"Webhook customer creation completed successfully for orderref: {orderref}")
 
-            # Create PowerCode Ticket & log response to a variable
-            ticket_creation_response_pc = PowerCode.create_powercode_ticket(customer_id, customer_to_powercode["firstname"])
-            
-            # Log entry for PowerCode ticket creation
-            logger.info(f'Ticket: {ticket_creation_response_pc}, created in PowerCode')
-            
 
+    def process_customer_creation(self, customer_data, orderref, service_plan):
+        """
+        Core customer creation workflow
+        Handles: duplicate check → create account → add plans → create ticket → send email
+        Returns: (success, customer_id, error_message, ticket_id)
+        """
+        try:
+            # Extract customer info for duplicate check
+            firstname = customer_data.get("firstname", "")
+            lastname = customer_data.get("lastname", "")
+            city = customer_data.get("city", "")
+            customer_full_name = f"{firstname} {lastname}".strip()
+            
+            # Check if customer already exists
+            exists, matching_customer = self.check_customer_exists(firstname, lastname, city)
+            if exists:
+                error_msg = f'Customer already exists in PowerCode with ID: {matching_customer.get("CustomerID")}'
+                logger.warning(error_msg)
+                return False, matching_customer.get('CustomerID'), error_msg, None
+            
+            # Create customer in PowerCode
+            logger.info(f"Creating PowerCode account for orderref={orderref}")
+            customer_id = PowerCode.create_powercode_account(customer_data)
+            
+            if customer_id == -1:
+                error_msg = 'Failed to create customer in PowerCode. Check server logs.'
+                logger.error(f"Failed to create customer in PowerCode for orderref: {orderref}")
+                return False, -1, error_msg, None
+            
+            # Add service plans
+            plans_success, plan_responses = self.add_service_plans(customer_id, service_plan)
+            if not plans_success:
+                logger.warning(f"Some service plans failed to add for customer {customer_id}")
+            
+            # Create PowerCode Ticket
+            ticket_id = PowerCode.create_powercode_ticket(customer_id, customer_data.get("firstname", ""))
+            logger.info(f'Ticket: {ticket_id}, created in PowerCode')
+            
             # Send Email
+            formatted_customer_info = self.format_contact_info(customer_data)
             self.send_email(
-                f"Customer created - {customer_first_last_name} PC#{customer_id}",
-                f'Powercode id: {PC_URL}:444/index.php?q&page=/customers/_view.php&customerid={customer_id} \n{formatted_customer_to_powercode}',
+                f"Customer created - {customer_full_name} PC#{customer_id}",
+                f'Powercode id: {PC_URL}:444/index.php?q&page=/customers/_view.php&customerid={customer_id}\n\n{formatted_customer_info}',
                 orderref
             )
+            
+            logger.info(f"Customer created successfully - Powercode: {customer_id}, Utopia siteID: {customer_data.get('siteid', 'N/A')}")
+            return True, customer_id, None, ticket_id
+            
+        except Exception as e:
+            error_msg = f'Error creating customer: {str(e)}'
+            logger.error(f"Error in process_customer_creation: {str(e)}", exc_info=True)
+            return False, -1, error_msg, None
 
-            logger.info(
-                f"Customer created - Powercode: {customer_id}, Utopia siteID: {customer_from_utopia['address']['siteid']}")
 
+    def check_customer_exists(self, firstname, lastname, city):
+        """
+        Check if customer already exists in PowerCode
+        Returns: (exists, matching_customer_or_none)
+        """
+        utopia_full_name = f"{firstname} {lastname}".strip()
+        
+        logger.info("Checking if customer exists in PowerCode...")
+        customers_list = PowerCode.search_powercode_customers(utopia_full_name)["customers"]
+        
+        # Try to find a match by name and city
+        for customer in customers_list:
+            pc_full_name = customer.get("CompanyName", "")
+            pc_city = customer.get("City", "")
+            # Match by full name and city
+            if pc_full_name == utopia_full_name and pc_city == city:
+                return True, customer
+        
+        return False, None
 
+    def add_service_plans(self, customer_id, primary_plan):
+        """
+        Add service plans to customer (primary + bond fee)
+        Returns: (success, responses)
+        """
+        # Service plan mapping
+        service_plan_mapping = {
+            "1 Gbps": SERVICE_PLAN_1GBPS_ID,
+            "250 Mbps": SERVICE_PLAN_250MBPS_ID,
+        }
+        
+        additional_service_plan_mapping = {
+            "Bond fee": SERVICE_PLAN_BOND_FEE_ID,
+        }
+        
+        responses = {}
+        
+        try:
+            # Add primary service plan
+            service_id_primary = service_plan_mapping.get(primary_plan, SERVICE_PLAN_250MBPS_ID)
+            service_plan_respond_primary = PowerCode.add_customer_service_plan(customer_id, service_id_primary)
+            responses['primary'] = service_plan_respond_primary
+            logger.info(f"Service plan '{primary_plan}' added: {service_plan_respond_primary}")
+            
+            # Add Bond fee
+            service_id_bond = additional_service_plan_mapping.get("Bond fee")
+            if service_id_bond:
+                service_plan_respond_bond = PowerCode.add_customer_service_plan(customer_id, service_id_bond)
+                responses['bond'] = service_plan_respond_bond
+                logger.info(f"Bond fee service added: {service_plan_respond_bond}")
+            
+            return True, responses
+            
+        except Exception as e:
+            logger.error(f"Error adding service plans: {str(e)}")
+            return False, responses
+
+    
     def send_email(self, msg_subject, msg_body, order_ref=None):
         """
         Send email notification using Flask-Mail
@@ -519,8 +519,8 @@ class UtopiaAPIHandler:
         except Exception as e:
             logger.error(f"Error sending email: {msg_subject}. Error: {str(e)}")
             return f"Error sending email: {msg_subject}"
-
     
+
     def customer_to_pc(self, customer_from_utopia, orderref):
         """
         Transform Utopia customer data to PowerCode format
