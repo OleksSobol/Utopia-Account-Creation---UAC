@@ -171,6 +171,7 @@ pytest.ini
 run_tests*
 TESTING.md
 test handle_new_order.py
+restart_service.sh
 
 contracts/
 utopiaenv/
