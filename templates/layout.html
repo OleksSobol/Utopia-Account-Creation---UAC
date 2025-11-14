@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title or "Utopia Admin" }}</title>
+
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Optional: Global Styles -->
+    <style>
+        .page-container {
+            @apply max-w-5xl mx-auto px-4 py-8;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- NAVBAR -->
+    <nav class="bg-gray-900 text-white shadow-lg">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <a href="/admin" class="text-xl font-bold">Utopia Admin</a>
+
+            <div class="flex items-center space-x-6">
+                <a href="/admin" class="hover:text-blue-400">Lookup</a>
+                <a href="/admin/failures" class="hover:text-blue-400">Failures</a>
+
+                {% if session.get("username") %}
+                <span class="text-gray-300">{{ session['username'] }}</span>
+                <form method="POST" action="/logout">
+                    <button class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded-lg">
+                        Logout
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- PAGE CONTENT WRAPPER -->
+    <div class="page-container">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+</body>
+</html>

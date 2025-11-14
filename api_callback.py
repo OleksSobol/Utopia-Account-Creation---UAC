@@ -8,6 +8,7 @@ import requests
 import powercode as PowerCode
 import utopia as Utopia
 import config
+from failure_tracker import FailureTracker
 
 from config import *
 from flask_mail import Mail, Message
@@ -51,6 +52,10 @@ class UtopiaAPIHandler:
         self.admin_password = ADMIN_PASS
         
         self.mail = Mail(self.app)
+        
+        # Initialize failure tracker
+        self.failure_tracker = FailureTracker()
+        
         self.setup_routes()
 
     def login_required(self, f):
@@ -80,6 +85,13 @@ class UtopiaAPIHandler:
         self.app.route('/admin', methods=['GET'])(self.login_required(self.admin_panel))
         self.app.route('/api/lookup', methods=['POST'])(self.login_required(self.admin_lookup))
         self.app.route('/api/create-customer', methods=['POST'])(self.login_required(self.create_customer_from_admin))
+        
+        # Failure management routes (protected)
+        self.app.route('/admin/failures', methods=['GET'])(self.login_required(self.admin_failures))
+        self.app.route('/api/failures', methods=['GET'])(self.login_required(self.get_failures_api))
+        self.app.route('/api/failures/<orderref>/resolve', methods=['POST'])(self.login_required(self.resolve_failure_api))
+        self.app.route('/api/failures/<orderref>/delete', methods=['DELETE'])(self.login_required(self.delete_failure_api))
+        self.app.route('/api/failures/stats', methods=['GET'])(self.login_required(self.get_failure_stats_api))
 
         # API callback route (no auth required)
         self.app.route('/api-callback', methods=['GET', 'POST'])(self.api_callback)
@@ -219,7 +231,14 @@ class UtopiaAPIHandler:
                         'error': error_message,
                         'customer_id': customer_id
                     }), 409
-                else:  # Creation failed
+                else:  # Creation failed - record in failure tracker
+                    self.failure_tracker.record_failure(
+                        orderref=orderref,
+                        error_message=error_message,
+                        failure_type="admin_creation_failed",
+                        customer_data=customer_data
+                    )
+                    
                     return jsonify({
                         'success': False,
                         'error': error_message
@@ -236,6 +255,121 @@ class UtopiaAPIHandler:
             
         except Exception as e:
             logger.error(f"Error in create_customer_from_admin: {str(e)}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': f'Server error: {str(e)}'
+            }), 500
+        
+    def admin_failures(self):
+        """
+        Renders the failure management interface
+        GET /admin/failures - Returns the HTML template for managing failures
+        """
+        return render_template('failures.html')
+    
+    def get_failures_api(self):
+        """
+        API endpoint to get failure data
+        GET /api/failures - Returns JSON with failure list and statistics
+        """
+        try:
+            include_resolved = request.args.get('include_resolved', 'false').lower() == 'true'
+            
+            # Get failure list and statistics
+            failures = self.failure_tracker.get_failure_list(include_resolved=include_resolved)
+            stats = self.failure_tracker.get_failure_stats()
+            
+            return jsonify({
+                'success': True,
+                'failures': failures,
+                'stats': stats,
+                'total': len(failures)
+            }), 200
+            
+        except Exception as e:
+            logger.error(f"Error in get_failures_api: {str(e)}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': f'Server error: {str(e)}'
+            }), 500
+    
+    def resolve_failure_api(self, orderref):
+        """
+        API endpoint to mark a failure as resolved
+        POST /api/failures/<orderref>/resolve - Mark failure as resolved
+        """
+        try:
+            data = request.get_json() or {}
+            resolution_note = data.get('note', '')
+            
+            success = self.failure_tracker.mark_resolved(orderref, resolution_note)
+            
+            if success:
+                logger.info(f"Admin marked failure as resolved: {orderref}")
+                return jsonify({
+                    'success': True,
+                    'message': f'Failure {orderref} marked as resolved'
+                }), 200
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': f'Failure {orderref} not found'
+                }), 404
+                
+        except Exception as e:
+            logger.error(f"Error in resolve_failure_api: {str(e)}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': f'Server error: {str(e)}'
+            }), 500
+    
+    def delete_failure_api(self, orderref):
+        """
+        API endpoint to delete a failure record
+        DELETE /api/failures/<orderref>/delete - Remove failure record
+        """
+        try:
+            success = self.failure_tracker.remove_failure(orderref)
+            
+            if success:
+                logger.info(f"Admin deleted failure record: {orderref}")
+                return jsonify({
+                    'success': True,
+                    'message': f'Failure {orderref} deleted'
+                }), 200
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': f'Failure {orderref} not found'
+                }), 404
+                
+        except Exception as e:
+            logger.error(f"Error in delete_failure_api: {str(e)}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': f'Server error: {str(e)}'
+            }), 500
+    
+    def get_failure_stats_api(self):
+        """
+        API endpoint to get failure statistics
+        GET /api/failures/stats - Returns JSON with detailed failure statistics
+        """
+        try:
+            stats = self.failure_tracker.get_failure_stats()
+            
+            # Get additional details
+            unresolved_failures = self.failure_tracker.get_failure_list(include_resolved=False)
+            recent_failures = unresolved_failures[:5]  # Last 5 unresolved
+            
+            return jsonify({
+                'success': True,
+                'stats': stats,
+                'recent_unresolved': recent_failures
+            }), 200
+            
+        except Exception as e:
+            logger.error(f"Error in get_failure_stats_api: {str(e)}", exc_info=True)
             return jsonify({
                 'success': False,
                 'error': f'Server error: {str(e)}'
@@ -310,7 +444,16 @@ class UtopiaAPIHandler:
 
         # Check for error FIRST before trying to access dict methods
         if customer_from_utopia == "Error":
-            logger.error(f"Failed to fetch customer from Utopia for order {orderref}")
+            error_msg = f"Failed to fetch customer from Utopia for order {orderref}"
+            logger.error(error_msg)
+            
+            # Record failure in tracking system
+            self.failure_tracker.record_failure(
+                orderref=orderref,
+                error_message="Utopia API returned error - invalid orderref or API issue",
+                failure_type="utopia_api_error"
+            )
+            
             self.send_email(
                 f"Failed to fetch customer data from Utopia - Order {orderref}",
                 f"Utopia API returned error for orderref: {orderref}",
@@ -357,9 +500,11 @@ class UtopiaAPIHandler:
         logger.info(f"Creating customer in Powercode with next data: \n{formatted_customer_to_powercode}")
 
         # Determine service plan from Utopia order items
-        # utopia_customers_service_plan = "250 Mbps"  # default
-        if "orderitems" in customer_from_utopia and customer_from_utopia["orderitems"]:
-            utopia_customers_service_plan = customer_from_utopia["orderitems"][0].get("description", utopia_customers_service_plan)
+        utopia_customers_service_plan = (
+            customer_from_utopia.get("orderitems", [{}])[0].get("description", "250 Mbps")
+            if customer_from_utopia.get("orderitems")
+            else "250 Mbps"
+        )
 
         # Use shared customer creation logic
         success, customer_id, error_message, ticket_id = self.process_customer_creation(
@@ -376,7 +521,14 @@ class UtopiaAPIHandler:
                     orderref,
                 )
             else:
-                # Creation failed
+                # Creation failed - record in failure tracker
+                self.failure_tracker.record_failure(
+                    orderref=orderref,
+                    error_message=error_message,
+                    failure_type="powercode_creation_failed",
+                    customer_data=customer_to_powercode
+                )
+                
                 self.send_email(
                     f"Failed to create customer: {customer_from_utopia}",
                     f'Check Powercode Logs, because API returns -1 when something wrong. \n{formatted_customer_to_powercode}',
