@@ -200,7 +200,7 @@ class UtopiaAPIHandler:
 
             # Get the service ID for the Utopia plan (with a default if not found)
             service_id_utopia = service_plan_mapping.get(utopia_customers_service_plan,
-                                                         default = SERVICE_PLAN_250MBPS_ID)
+                                                         SERVICE_PLAN_250MBPS_ID)
 
             # Add Utopia service plan
             service_plan_respond_utopia = PowerCode.add_customer_service_plan(
