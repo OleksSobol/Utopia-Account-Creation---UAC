@@ -1,0 +1,772 @@
+{% extends "base.html" %}
+
+{% block title %}Configuration Management - Utopia Admin{% endblock %}
+
+{% block nav_subtitle %}Configuration Management{% endblock %}
+
+{% block content %}
+<!-- Alert Messages (Fixed at top) -->
+<div id="alertContainer" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-2xl px-4"></div>
+
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+    <!-- Welcome Banner -->
+    <div class="gradient-bg rounded-2xl shadow-xl p-8 mb-8 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-3xl font-bold mb-2">
+                    <i class="fas fa-cog mr-3"></i>Configuration Management
+                </h2>
+                <p class="text-blue-100">View and manage system configuration settings</p>
+            </div>
+            <div class="hidden md:block">
+                <i class="fas fa-sliders-h text-6xl opacity-20"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuration Sections -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Flask Configuration -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 hover-lift">
+            <div class="flex items-center mb-4">
+                <i class="fas fa-server text-blue-600 text-2xl mr-3"></i>
+                <h3 class="text-xl font-bold text-gray-800">Flask Server</h3>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Host</label>
+                    <input 
+                        type="text" 
+                        id="FLASK_HOST" 
+                        value="{{ config_data.flask.FLASK_HOST }}"
+                        readonly
+                        disabled
+                        class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                    >
+                    <p class="text-xs text-gray-500 mt-1">
+                        <i class="fas fa-lock mr-1"></i>
+                        This setting cannot be changed from the UI
+                    </p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Port</label>
+                    <input 
+                        type="number" 
+                        id="FLASK_PORT" 
+                        value="{{ config_data.flask.FLASK_PORT }}"
+                        readonly
+                        disabled
+                        class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                    >
+                    <p class="text-xs text-gray-500 mt-1">
+                        <i class="fas fa-lock mr-1"></i>
+                        This setting cannot be changed from the UI
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Configuration -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 hover-lift">
+            <div class="flex items-center mb-4">
+                <i class="fas fa-envelope text-green-600 text-2xl mr-3"></i>
+                <h3 class="text-xl font-bold text-gray-800">Email Settings</h3>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Mail Server</label>
+                    <input 
+                        type="text" 
+                        id="MAIL_SERVER" 
+                        value="{{ config_data.email.MAIL_SERVER }}"
+                        class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Mail Port</label>
+                    <input 
+                        type="number" 
+                        id="MAIL_PORT" 
+                        value="{{ config_data.email.MAIL_PORT }}"
+                        class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Sender Email</label>
+                    <input 
+                        type="email" 
+                        id="EMAIL_SENDER" 
+                        value="{{ config_data.email.EMAIL_SENDER }}"
+                        class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Recipients (comma-separated)
+                    </label>
+                    <textarea 
+                        id="EMAIL_RECIPIENTS" 
+                        rows="2"
+                        class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >{{ config_data.email.EMAIL_RECIPIENTS }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- PowerCode Configuration -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 hover-lift lg:col-span-2">
+            <div class="flex items-center mb-4">
+                <i class="fas fa-database text-purple-600 text-2xl mr-3"></i>
+                <h3 class="text-xl font-bold text-gray-800">PowerCode API & Service Plans</h3>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">API Key</label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="PC_API_KEY" 
+                            value="{{ config_data.powercode.PC_API_KEY }}"
+                            class="w-full px-4 py-2 pr-12 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono"
+                        >
+                        <button 
+                            type="button"
+                            onclick="togglePasswordVisibility('PC_API_KEY')"
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                            <i class="fas fa-eye" id="PC_API_KEY-icon"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">
+                        <i class="fas fa-key mr-1"></i>
+                        PowerCode API authentication key
+                    </p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">PowerCode URL</label>
+                    <input 
+                        type="text" 
+                        id="PC_URL" 
+                        value="{{ config_data.powercode.PC_URL }}"
+                        class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">PowerCode API URL</label>
+                    <input 
+                        type="text" 
+                        id="PC_URL_API" 
+                        value="{{ config_data.powercode.PC_URL_API }}"
+                        class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Address Range V4 ID</label>
+                    <input 
+                        type="number" 
+                        id="PC_ADDRESS_RANGE_V4" 
+                        value="{{ config_data.powercode.PC_ADDRESS_RANGE_V4 }}"
+                        class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">1 Gbps Plan ID</label>
+                    <input 
+                        type="number" 
+                        id="SERVICE_PLAN_1GBPS_ID" 
+                        value="{{ config_data.powercode.SERVICE_PLAN_1GBPS_ID }}"
+                        class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">250 Mbps Plan ID</label>
+                    <input 
+                        type="number" 
+                        id="SERVICE_PLAN_250MBPS_ID" 
+                        value="{{ config_data.powercode.SERVICE_PLAN_250MBPS_ID }}"
+                        class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Bond Fee Plan ID</label>
+                    <input 
+                        type="number" 
+                        id="SERVICE_PLAN_BOND_FEE_ID" 
+                        value="{{ config_data.powercode.SERVICE_PLAN_BOND_FEE_ID }}"
+                        class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Customer Portal Password</label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="CUSTOMER_PORTAL_PASSWORD" 
+                            value="{{ config_data.powercode.CUSTOMER_PORTAL_PASSWORD }}"
+                            class="w-full px-4 py-2 pr-12 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono"
+                        >
+                        <button 
+                            type="button"
+                            onclick="togglePasswordVisibility('CUSTOMER_PORTAL_PASSWORD')"
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                            <i class="fas fa-eye" id="CUSTOMER_PORTAL_PASSWORD-icon"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">
+                        <i class="fas fa-lock mr-1"></i>
+                        Default password for new customer portals
+                    </p>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            id="PC_VERIFY_SSL"
+                            {% if config_data.powercode.PC_VERIFY_SSL %}checked{% endif %}
+                            class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        >
+                        <span class="text-sm font-semibold text-gray-700">Verify SSL Certificates</span>
+                    </label>
+                    <p class="text-xs text-gray-500 mt-1 ml-7">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Enable SSL verification for secure API connections
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Utopia Configuration -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 hover-lift">
+            <div class="flex items-center mb-4">
+                <i class="fas fa-network-wired text-indigo-600 text-2xl mr-3"></i>
+                <h3 class="text-xl font-bold text-gray-800">Utopia Fiber API</h3>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">API Key</label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="UTOPIA_API_KEY" 
+                            value="{{ config_data.utopia.UTOPIA_API_KEY }}"
+                            class="w-full px-4 py-2 pr-12 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono"
+                        >
+                        <button 
+                            type="button"
+                            onclick="togglePasswordVisibility('UTOPIA_API_KEY')"
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                            <i class="fas fa-eye" id="UTOPIA_API_KEY-icon"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">
+                        <i class="fas fa-key mr-1"></i>
+                        Utopia Fiber API authentication key
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Login Configuration -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 hover-lift lg:col-span-2">
+            <div class="flex items-center mb-4">
+                <i class="fas fa-user-shield text-red-600 text-2xl mr-3"></i>
+                <h3 class="text-xl font-bold text-gray-800">Admin Panel Login</h3>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Admin Username</label>
+                    <input 
+                        type="text" 
+                        id="ADMIN_USER" 
+                        value="{{ config_data.admin.ADMIN_USER }}"
+                        class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Admin Password</label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="ADMIN_PASS" 
+                            value="{{ config_data.admin.ADMIN_PASS }}"
+                            class="w-full px-4 py-2 pr-12 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono"
+                        >
+                        <button 
+                            type="button"
+                            onclick="togglePasswordVisibility('ADMIN_PASS')"
+                            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                            <i class="fas fa-eye" id="ADMIN_PASS-icon"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">
+                        <i class="fas fa-lock mr-1"></i>
+                        Password for accessing this admin panel
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ticket Template Configuration -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 hover-lift">
+            <div class="flex items-center mb-4">
+                <i class="fas fa-ticket-alt text-teal-600 text-2xl mr-3"></i>
+                <h3 class="text-xl font-bold text-gray-800">Ticket Templates</h3>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Template Directory</label>
+                    <input 
+                        type="text" 
+                        id="TICKET_TEMPLATE_DIR" 
+                        value="{{ config_data.ticket_templates.TICKET_TEMPLATE_DIR }}"
+                        class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                    <p class="text-xs text-gray-500 mt-1">
+                        <i class="fas fa-folder mr-1"></i>
+                        Directory where ticket templates are stored
+                    </p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Active Template File 
+                        <span class="text-xs font-normal text-gray-500">(Used for new customers)</span>
+                    </label>
+                    <select 
+                        id="TICKET_TEMPLATE_FILE" 
+                        class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="">Loading templates...</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">
+                        <i class="fas fa-file-check mr-1"></i>
+                        This template will be used for new customer tickets
+                    </p>
+                </div>
+                <div hidden>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Template Metadata File</label>
+                    <input 
+                        type="text" 
+                        id="TICKET_TEMPLATE_META_FILE" 
+                        value="{{ config_data.ticket_templates.TICKET_TEMPLATE_META_FILE }}"
+                        class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                    <p class="text-xs text-gray-500 mt-1">
+                        <i class="fas fa-file-code mr-1"></i>
+                        Metadata file containing template information
+                    </p>
+                </div>
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-3 rounded">
+                    <p class="text-xs text-blue-800">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        <strong>Note:</strong> Use the <a href="/admin/ticket-editor" class="underline font-semibold">Ticket Editor</a> to modify template content
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logging Configuration -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 hover-lift">
+            <div class="flex items-center mb-4">
+                <i class="fas fa-file-alt text-gray-600 text-2xl mr-3"></i>
+                <h3 class="text-xl font-bold text-gray-800">Logging</h3>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Log File Path</label>
+                <input 
+                    type="text" 
+                    id="LOG_FILE" 
+                    value="{{ config_data.logging.LOG_FILE }}"
+                    class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    readonly
+                    disabled
+                >
+                <p class="text-xs text-gray-500 mt-1">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    This setting cannot be changed from the UI
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="mt-8 flex justify-between items-center bg-white rounded-2xl shadow-lg p-6">
+        <div class="text-sm text-gray-600">
+            <i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i>
+            <strong>Note:</strong> Changes require application restart to take effect.
+        </div>
+        <div class="flex space-x-4">
+            <button 
+                onclick="resetForm()"
+                class="flex items-center px-6 py-3 rounded-lg bg-gray-500 hover:bg-gray-600 text-white font-semibold"
+            >
+                <i class="fas fa-undo mr-2"></i>
+                Reset
+            </button>
+            <button 
+                onclick="restartApplication()"
+                id="restartBtn"
+                class="flex items-center px-6 py-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-semibold"
+            >
+                <i class="fas fa-sync-alt mr-2"></i>
+                Restart App
+            </button>
+            <button 
+                onclick="saveConfiguration()"
+                id="saveBtn"
+                class="flex items-center px-6 py-3 rounded-lg gradient-bg hover:shadow-lg text-white font-semibold"
+            >
+                <i class="fas fa-save mr-2"></i>
+                Save Configuration
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Load ticket templates on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadTicketTemplates();
+    });
+
+    // Load available ticket templates into dropdown
+    async function loadTicketTemplates() {
+        try {
+            const response = await fetch('/api/ticket-template/list');
+            const data = await response.json();
+            
+            if (data.success && data.templates.length > 0) {
+                const select = document.getElementById('TICKET_TEMPLATE_FILE');
+                const currentValue = select.getAttribute('value') || '{{ config_data.ticket_templates.TICKET_TEMPLATE_FILE }}';
+                
+                select.innerHTML = '';
+                
+                data.templates.forEach(template => {
+                    const option = document.createElement('option');
+                    option.value = template.filename;
+                    option.textContent = `${template.name} (${template.filename})`;
+                    
+                    if (template.filename === currentValue) {
+                        option.selected = true;
+                    }
+                    
+                    select.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading ticket templates:', error);
+        }
+    }
+
+    // Toggle password visibility
+    function togglePasswordVisibility(fieldId) {
+        const field = document.getElementById(fieldId);
+        const icon = document.getElementById(fieldId + '-icon');
+        
+        if (field.type === 'password') {
+            field.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            field.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+
+    // Logout function
+    function logout() {
+        fetch('/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            window.location.href = '/login';
+        })
+        .catch(error => {
+            console.error('Logout error:', error);
+            window.location.href = '/login';
+        });
+    }
+
+    // Show alert message
+    function showAlert(message, type = 'info') {
+        const alertContainer = document.getElementById('alertContainer');
+        const alertTypes = {
+            success: 'bg-green-100 border-green-500 text-green-700',
+            error: 'bg-red-100 border-red-500 text-red-700',
+            warning: 'bg-yellow-100 border-yellow-500 text-yellow-700',
+            info: 'bg-blue-100 border-blue-500 text-blue-700'
+        };
+        
+        const alertHtml = `
+            <div class="border-l-4 p-4 rounded ${alertTypes[type]} mb-4" role="alert">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'times-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} mr-3 text-xl"></i>
+                        <p class="font-semibold">${message}</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-xl">&times;</button>
+                </div>
+            </div>
+        `;
+        
+        alertContainer.innerHTML = alertHtml;
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            alertContainer.innerHTML = '';
+        }, 10000);
+    }
+
+    // Reset form to original values
+    function resetForm() {
+        location.reload();
+    }
+
+    // Gather all configuration values
+    function gatherConfigValues() {
+        const updates = {};
+        
+        // Get all input fields (excluding hidden/disabled/readonly)
+        const inputs = document.querySelectorAll('input[id]:not([disabled]):not([readonly]):not([type="hidden"])');
+        inputs.forEach(input => {
+            // Skip if parent is hidden
+            if (input.closest('[hidden]')) {
+                return;
+            }
+            
+            if (input.type === 'checkbox') {
+                updates[input.id] = input.checked ? 'true' : 'false';
+            } else if (input.type === 'number') {
+                updates[input.id] = parseInt(input.value);
+            } else {
+                updates[input.id] = input.value.trim();
+            }
+        });
+        
+        // Get textarea values
+        const textareas = document.querySelectorAll('textarea[id]');
+        textareas.forEach(textarea => {
+            updates[textarea.id] = textarea.value.trim();
+        });
+        
+        // Get select values
+        const selects = document.querySelectorAll('select[id]');
+        selects.forEach(select => {
+            updates[select.id] = select.value.trim();
+        });
+        
+        return updates;
+    }
+
+    // Validate email addresses
+    function validateEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email.trim());
+    }
+
+    // Validate configuration values
+    function validateConfiguration(updates) {
+        const errors = [];
+        
+        // Validate EMAIL_SENDER
+        if (updates.EMAIL_SENDER && !validateEmail(updates.EMAIL_SENDER)) {
+            errors.push('Email Sender: Invalid email format');
+        }
+        
+        // Validate EMAIL_RECIPIENTS (comma-separated list)
+        if (updates.EMAIL_RECIPIENTS) {
+            const recipients = updates.EMAIL_RECIPIENTS.split(',');
+            const invalidEmails = [];
+            
+            recipients.forEach(email => {
+                const trimmed = email.trim();
+                if (trimmed && !validateEmail(trimmed)) {
+                    invalidEmails.push(trimmed);
+                }
+            });
+            
+            if (invalidEmails.length > 0) {
+                errors.push(`Email Recipients: Invalid email(s) - ${invalidEmails.join(', ')}`);
+            }
+        }
+        
+        // Validate numeric fields are positive
+        const numericFields = ['MAIL_PORT', 'PC_ADDRESS_RANGE_V4', 'SERVICE_PLAN_1GBPS_ID', 
+                               'SERVICE_PLAN_250MBPS_ID', 'SERVICE_PLAN_BOND_FEE_ID'];
+        
+        numericFields.forEach(field => {
+            if (updates[field] !== undefined && updates[field] <= 0) {
+                errors.push(`${field}: Must be a positive number`);
+            }
+        });
+        
+        // Validate ticket template fields
+        if (updates.TICKET_TEMPLATE_DIR && updates.TICKET_TEMPLATE_DIR.trim() === '') {
+            errors.push('Ticket Template Directory: Cannot be empty');
+        }
+        
+        if (updates.TICKET_TEMPLATE_FILE && updates.TICKET_TEMPLATE_FILE.trim() === '') {
+            errors.push('Ticket Template File: Cannot be empty');
+        }
+        
+        if (updates.TICKET_TEMPLATE_FILE && !updates.TICKET_TEMPLATE_FILE.endsWith('.txt')) {
+            errors.push('Ticket Template File: Must end with .txt extension');
+        }
+        
+        // Skip validation for hidden TICKET_TEMPLATE_META_FILE field
+        
+        return errors;
+    }
+
+    // Save configuration
+    async function saveConfiguration() {
+        const saveBtn = document.getElementById('saveBtn');
+        const originalContent = saveBtn.innerHTML;
+        
+        // Disable button and show loading
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+        
+        try {
+            const updates = gatherConfigValues();
+            
+            // Validate configuration before sending
+            const validationErrors = validateConfiguration(updates);
+            if (validationErrors.length > 0) {
+                const errorList = validationErrors.map(err => `<li>${err}</li>`).join('');
+                showAlert(
+                    `<strong>Validation Errors:</strong><ul class="mt-2 text-sm list-disc list-inside ml-4">${errorList}</ul>`,
+                    'error'
+                );
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalContent;
+                return;
+            }
+            
+            const response = await fetch('/api/config/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ updates })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                if (data.updated_count > 0) {
+                    // Show list of changes
+                    let changesList = '';
+                    if (data.changes && data.changes.length > 0) {
+                        changesList = '<ul class="mt-2 text-sm list-disc list-inside">';
+                        data.changes.forEach(change => {
+                            changesList += `<li>${change}</li>`;
+                        });
+                        changesList += '</ul>';
+                    }
+                    
+                    const restartMessage = data.restart_required 
+                        ? '<br><strong class="block mt-2">⚠️ Application restart is required for changes to take effect.</strong>'
+                        : '<br><strong class="block mt-2">✅ Configuration reloaded successfully. Changes are now active.</strong>';
+                    
+                    showAlert(
+                        `${data.message}${changesList}${restartMessage}`, 
+                        'success'
+                    );
+                    
+                    // If password was changed, logout and redirect to login
+                    if (data.logout_required) {
+                        setTimeout(() => {
+                            showAlert('🔐 Admin password changed. Logging out...', 'warning');
+                            setTimeout(async () => {
+                                // Call logout endpoint
+                                await fetch('/logout', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' }
+                                });
+                                // Redirect to login
+                                window.location.href = '/login';
+                            }, 2000);
+                        }, 2000);
+                    }
+                } else {
+                    showAlert(data.message, 'info');
+                }
+            } else {
+                showAlert(`Error: ${data.error}`, 'error');
+            }
+        } catch (error) {
+            console.error('Save error:', error);
+            showAlert(`Failed to save configuration: ${error.message}`, 'error');
+        } finally {
+            // Re-enable button
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalContent;
+        }
+    }
+
+    // Restart application
+    async function restartApplication() {
+        if (!confirm('⚠️ Are you sure you want to restart the application? This will briefly interrupt service.')) {
+            return;
+        }
+
+        const restartBtn = document.getElementById('restartBtn');
+        const originalContent = restartBtn.innerHTML;
+        
+        // Disable button and show loading
+        restartBtn.disabled = true;
+        restartBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Restarting...';
+        
+        try {
+            const response = await fetch('/api/config/restart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showAlert(
+                    '✅ ' + data.message + '<br><span class="text-sm">Reloading page in 5 seconds...</span>', 
+                    'success'
+                );
+                
+                // Wait 5 seconds then reload the page
+                setTimeout(() => {
+                    window.location.reload();
+                }, 5000);
+            } else {
+                showAlert(`Error: ${data.error}`, 'error');
+                restartBtn.disabled = false;
+                restartBtn.innerHTML = originalContent;
+            }
+        } catch (error) {
+            console.error('Restart error:', error);
+            showAlert(`Failed to restart application: ${error.message}`, 'error');
+            restartBtn.disabled = false;
+            restartBtn.innerHTML = originalContent;
+        }
+    }
+
+    // Add keyboard shortcut for save (Ctrl+S)
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            saveConfiguration();
+        }
+    });
+</script>
+{% endblock %}

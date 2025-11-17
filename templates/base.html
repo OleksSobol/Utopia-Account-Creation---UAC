@@ -79,26 +79,103 @@
     
     {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-gray-50 min-h-screen">
-    {% block navbar %}{% endblock %}
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    {% block navbar %}
+    <!-- Default Navigation (can be overridden in child templates) -->
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo/Brand -->
+                <div class="flex items-center space-x-3">
+                    <div class="gradient-bg p-2 rounded-lg">
+                        <i class="fas fa-database text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-800">Utopia Admin</h1>
+                        <p class="text-xs text-gray-500">{% block nav_subtitle %}Customer Lookup System{% endblock %}</p>
+                    </div>
+                </div>
+                
+                <!-- Navigation Links -->
+                <div class="flex items-center space-x-4">
+                    <a href="/admin" class="flex items-center px-4 py-2 rounded-lg {% if request.path == '/admin' %}bg-blue-50 text-blue-600{% else %}text-gray-600 hover:bg-gray-100{% endif %} font-semibold">
+                        <i class="fas fa-search mr-2"></i>
+                        Lookup
+                    </a>
+                    <a href="/admin/failures" class="flex items-center px-4 py-2 rounded-lg {% if request.path == '/admin/failures' %}bg-yellow-50 text-yellow-600{% else %}text-gray-600 hover:bg-gray-100{% endif %} font-semibold">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Failures
+                    </a>
+                    <a href="/admin/ticket-editor" class="flex items-center px-4 py-2 rounded-lg {% if request.path == '/admin/ticket-editor' %}bg-purple-50 text-purple-600{% else %}text-gray-600 hover:bg-gray-100{% endif %} font-semibold">
+                        <i class="fas fa-file-alt mr-2"></i>
+                        Ticket Editor
+                    </a>
+                    <a href="/admin/config" class="flex items-center px-4 py-2 rounded-lg {% if request.path == '/admin/config' %}bg-green-50 text-green-600{% else %}text-gray-600 hover:bg-gray-100{% endif %} font-semibold">
+                        <i class="fas fa-cog mr-2"></i>
+                        Config
+                    </a>
+                    
+                    <!-- User Menu -->
+                    <div class="flex items-center space-x-3 pl-4 border-l-2 border-gray-200">
+                        <div class="text-right">
+                            <p class="text-xs text-gray-500">Logged in as</p>
+                            <p class="text-sm font-semibold text-gray-800">{{ session.get('username', 'Admin') }}</p>
+                        </div>
+                        <button 
+                            onclick="logout()"
+                            class="flex items-center px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold"
+                        >
+                            <i class="fas fa-sign-out-alt mr-2"></i>
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    {% endblock %}
     
     <!-- Main Content -->
-    <main>
+    <main class="flex-grow">
         {% block content %}{% endblock %}
     </main>
     
+
     <!-- Footer -->
+    {% block footer %}
     <footer class="bg-gray-800 text-white py-6 mt-12">
         <div class="container mx-auto px-4 text-center">
             <p class="text-sm">
                 <i class="fas fa-shield-alt mr-2"></i>
-                Utopia Customer Lookup System &copy; 2024
+                UAC &copy; 2025
             </p>
             <p class="text-xs text-gray-400 mt-2">
-                Secure Admin Portal | Version 1.0.0
+                Secure Admin Portal | Version 1.1.4
             </p>
         </div>
     </footer>
+    {% endblock %}
+
+    <!-- Base JavaScript -->
+    <script>
+        // Logout function (available to all pages)
+        function logout() {
+            fetch('/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                window.location.href = '/login';
+            })
+            .catch(error => {
+                console.error('Logout error:', error);
+                window.location.href = '/login';
+            });
+        }
+    </script>
     
     {% block extra_js %}{% endblock %}
 </body>

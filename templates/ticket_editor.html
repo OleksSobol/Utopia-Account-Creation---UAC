@@ -2,49 +2,6 @@
 
 {% block title %}Ticket Template Editor - Utopia Admin{% endblock %}
 
-{% block navbar %}
-<nav class="bg-white shadow-md sticky top-0 z-50">
-    <div class="container mx-auto px-4">
-        <div class="flex items-center justify-between h-16">
-            <div class="flex items-center space-x-3">
-                <div class="gradient-bg p-2 rounded-lg">
-                    <i class="fas fa-database text-white text-xl"></i>
-                </div>
-                <div>
-                    <h1 class="text-xl font-bold text-gray-800">Utopia Admin</h1>
-                    <p class="text-xs text-gray-500">Customer Lookup System</p>
-                </div>
-            </div>
-            
-            <div class="flex items-center space-x-4">
-                <a href="/admin" class="flex items-center px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-semibold">
-                    <i class="fas fa-search mr-2"></i>Lookup
-                </a>
-                <a href="/admin/failures" class="flex items-center px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-semibold">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>Failures
-                </a>
-                <a href="/admin/ticket-editor" class="flex items-center px-4 py-2 rounded-lg bg-purple-50 text-purple-600 font-semibold hover:bg-purple-100">
-                    <i class="fas fa-file-alt mr-2"></i>Ticket Editor
-                </a>
-                
-                <div class="flex items-center space-x-3 pl-4 border-l-2 border-gray-200">
-                    <div class="text-right">
-                        <p class="text-xs text-gray-500">Logged in as</p>
-                        <p class="text-sm font-semibold text-gray-800">{{ session.get('username', 'Admin') }}</p>
-                    </div>
-                    <button 
-                        onclick="logout()"
-                        class="flex items-center px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold"
-                    >
-                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</nav>
-{% endblock %}
-
 {% block content %}
 <div class="container mx-auto px-4 py-8 max-w-7xl">
     <!-- Header -->
@@ -62,152 +19,172 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Template List Sidebar -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Templates List Sidebar -->
         <div class="lg:col-span-1">
-            <div class="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
-                <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                    <i class="fas fa-list mr-2 text-blue-600"></i>Templates
-                </h3>
-                
-                <div class="space-y-2 mb-6">
+            <div class="bg-white rounded-2xl shadow-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">Templates</h3>
                     <button 
-                        onclick="loadTemplate('new_customer')"
-                        id="btn-new_customer"
-                        class="w-full text-left px-4 py-3 rounded-lg bg-blue-50 text-blue-700 font-semibold hover:bg-blue-100 flex items-center justify-between template-btn"
+                        onclick="createNewTemplate()"
+                        class="text-blue-600 hover:text-blue-800"
+                        title="Create new template"
                     >
-                        <span><i class="fas fa-user-plus mr-2"></i>New Customer</span>
-                        <i class="fas fa-chevron-right"></i>
+                        <i class="fas fa-plus-circle text-xl"></i>
                     </button>
                 </div>
-
-                <hr class="my-4 border-gray-200">
-
-                <button 
-                    onclick="createNewTemplate()"
-                    class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-4 py-3 rounded-lg flex items-center justify-center"
-                >
-                    <i class="fas fa-plus mr-2"></i>Create New Template
-                </button>
+                <div id="templatesList" class="space-y-2">
+                    <div class="text-center text-gray-400 py-4">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p class="text-sm">Loading templates...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Active Template Info -->
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded mt-4">
+                <p class="text-xs text-blue-800">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    <strong>Active Template:</strong> Set in <a href="/admin/config" class="underline font-semibold">Configuration</a>
+                </p>
             </div>
         </div>
 
         <!-- Editor Area -->
-        <div class="lg:col-span-2">
-            <div class="bg-white rounded-2xl shadow-lg p-8">
-                <!-- Template Info -->
-                <div class="mb-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex-1 mr-4">
-                            <label for="templateName" class="block text-sm font-semibold text-gray-700 mb-2">
-                                Template Name
-                            </label>
-                            <input 
-                                type="text" 
-                                id="templateName" 
-                                placeholder="Enter template name"
-                                class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                            >
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">
-                                Status
-                            </label>
-                            <span id="saveStatus" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-600 text-sm font-semibold inline-block">
-                                <i class="fas fa-circle text-gray-400 mr-2"></i>Ready
-                            </span>
-                        </div>
-                    </div>
-
-                    <div hidden class="mb-4">
-                        <label for="templateSubject" class="block text-sm font-semibold text-gray-700 mb-2">
-                            Email Subject (Optional)
-                        </label>
-                        <input 
-                            type="text" 
-                            id="templateSubject" 
-                            placeholder="Enter email subject line"
-                            class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                        >
-                    </div>
-                </div>
-
-                <!-- Editor Tabs -->
-                <div class="mb-4">
-                    <div class="flex space-x-2 border-b-2 border-gray-200">
-                        <button 
-                            onclick="switchEditorMode('html')"
-                            id="tab-html"
-                            class="px-6 py-3 font-semibold text-blue-600 border-b-2 border-blue-600 -mb-0.5"
-                        >
-                            <i class="fas fa-code mr-2"></i>HTML Editor
-                        </button>
-                        <button 
-                            onclick="switchEditorMode('preview')"
-                            id="tab-preview"
-                            class="px-6 py-3 font-semibold text-gray-600 hover:text-gray-800"
-                        >
-                            <i class="fas fa-eye mr-2"></i>Preview
-                        </button>
-                    </div>
-                </div>
-
-                <!-- HTML Editor -->
-                <div id="editor-html" class="mb-6">
-                    <div class="mb-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <label class="block text-sm font-semibold text-gray-700">
-                                HTML Content
-                            </label>
-                        </div>
-                        <textarea 
-                            id="templateContent" 
-                            rows="20"
-                            placeholder="Enter HTML content here..."
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono text-sm custom-scrollbar"
-                        ></textarea>
-                    </div>
-
-                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
-                        <p class="text-sm text-blue-800">
-                            <i class="fas fa-info-circle mr-2"></i>
-                            <strong>Available Variables:</strong> {customer_name}, {order_ref}, {site_id}, {email}, {phone}, {address}, {city}, {state}, {zip}
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Preview -->
-                <div id="editor-preview" class="mb-6 hidden">
-                    <div class="border-2 border-gray-200 rounded-lg p-6 bg-gray-50 min-h-[500px] custom-scrollbar overflow-auto">
-                        <div id="previewContent" class="bg-white p-8 rounded-lg shadow-sm">
-                            <p class="text-gray-400 italic text-center py-20">Preview will appear here...</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="flex space-x-3">
-                    <button 
-                        onclick="saveTemplate()"
-                        id="saveBtn"
-                        class="flex-1 gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center"
+        <div class="lg:col-span-3">
+        <!-- Editor Area -->
+        <div class="lg:col-span-3">
+    <div class="bg-white rounded-2xl shadow-lg p-8">
+        <!-- Template Info -->
+        <div class="mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex-1 mr-4">
+                    <label for="templateName" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Template Name <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="templateName" 
+                        placeholder="Enter template name (e.g., 'New Customer Welcome')"
+                        class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     >
-                        <i class="fas fa-save mr-2"></i>Save Template
-                    </button>
-                    <button 
-                        onclick="downloadTemplate()"
-                        class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center"
-                    >
-                        <i class="fas fa-download mr-2"></i>Download
-                    </button>
-                    <button 
-                        onclick="resetEditor()"
-                        class="bg-gray-500 hover:bg-gray-600 text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center"
-                    >
-                        <i class="fas fa-undo mr-2"></i>Reset
-                    </button>
+                    <p class="text-xs text-gray-500 mt-1">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Changing the name will create a new template file
+                    </p>
+                </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Status
+                    </label>
+                    <span id="saveStatus" class="px-4 py-2 rounded-lg bg-gray-100 text-gray-600 text-sm font-semibold inline-block">
+                        <i class="fas fa-circle text-gray-400 mr-2"></i>Ready
+                    </span>
                 </div>
             </div>
+
+            <div hidden class="mb-4">
+                <label for="templateSubject" class="block text-sm font-semibold text-gray-700 mb-2">
+                    Email Subject (Optional)
+                </label>
+                <input 
+                    type="text" 
+                    id="templateSubject" 
+                    placeholder="Enter email subject line"
+                    class="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                >
+            </div>
+        </div>
+
+        <!-- Editor Tabs -->
+        <div class="mb-4">
+            <div class="flex space-x-2 border-b-2 border-gray-200">
+                <button 
+                    onclick="switchEditorMode('html')"
+                    id="tab-html"
+                    class="px-6 py-3 font-semibold text-blue-600 border-b-2 border-blue-600 -mb-0.5"
+                >
+                    <i class="fas fa-code mr-2"></i>HTML Editor
+                </button>
+                <button 
+                    onclick="switchEditorMode('preview')"
+                    id="tab-preview"
+                    class="px-6 py-3 font-semibold text-gray-600 hover:text-gray-800"
+                >
+                    <i class="fas fa-eye mr-2"></i>Preview
+                </button>
+            </div>
+        </div>
+
+        <!-- HTML Editor -->
+        <div id="editor-html" class="mb-6">
+            <div class="mb-4">
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block text-sm font-semibold text-gray-700">
+                        HTML Content
+                    </label>
+                </div>
+                <textarea 
+                    id="templateContent" 
+                    rows="20"
+                    placeholder="Enter HTML content here..."
+                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono text-sm custom-scrollbar"
+                ></textarea>
+            </div>
+
+            <!-- <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+                <p class="text-sm text-blue-800">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <strong>Available Variables:</strong> {customer_name}, {order_ref}, {site_id}, {email}, {phone}, {address}, {city}, {state}, {zip}
+                </p>
+            </div> -->
+        </div>
+
+        <!-- Preview -->
+        <div id="editor-preview" class="mb-6 hidden">
+            <div class="border-2 border-gray-200 rounded-lg p-6 bg-gray-50 min-h-[500px] custom-scrollbar overflow-auto">
+                <div id="previewContent" class="bg-white p-8 rounded-lg shadow-sm prose prose-sm max-w-none">
+                    <p class="text-gray-400 italic text-center py-20">Preview will appear here...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex space-x-3">
+            <button 
+                onclick="saveTemplate()"
+                id="saveBtn"
+                class="flex-1 gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center"
+            >
+                <i class="fas fa-save mr-2"></i>Save Template
+            </button>
+            <button 
+                onclick="saveAsNewTemplate()"
+                class="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center"
+            >
+                <i class="fas fa-plus-square mr-2"></i>Save As New
+            </button>
+            <button 
+                onclick="downloadTemplate()"
+                class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center"
+            >
+                <i class="fas fa-download mr-2"></i>Download
+            </button>
+            <button 
+                onclick="deleteTemplate()"
+                class="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center"
+            >
+                <i class="fas fa-trash mr-2"></i>Delete
+            </button>
+            <button 
+                onclick="resetEditor()"
+                class="bg-gray-500 hover:bg-gray-600 text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center"
+            >
+                <i class="fas fa-undo mr-2"></i>Reset
+            </button>
+        </div>
+    </div>
         </div>
     </div>
 </div>
@@ -217,48 +194,182 @@
 {% endblock %}
 
 {% block extra_js %}
+<style>
+#previewContent ul {
+    list-style-type: disc;
+    margin-left: 2rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+#previewContent ol {
+    list-style-type: decimal;
+    margin-left: 2rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+#previewContent li {
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+#previewContent p {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+#previewContent h1, #previewContent h2, #previewContent h3, 
+#previewContent h4, #previewContent h5, #previewContent h6 {
+    font-weight: bold;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+#previewContent h1 { font-size: 2rem; }
+#previewContent h2 { font-size: 1.5rem; }
+#previewContent h3 { font-size: 1.25rem; }
+#previewContent h4 { font-size: 1.1rem; }
+
+#previewContent strong, #previewContent b {
+    font-weight: bold;
+}
+
+#previewContent em, #previewContent i {
+    font-style: italic;
+}
+
+#previewContent a {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+#previewContent br {
+    display: block;
+    content: "";
+    margin-top: 0.5rem;
+}
+</style>
 <script>
 let currentTemplate = 'new_customer';
+let currentTemplateFile = 'new_desc.txt';
 let originalContent = '';
-
-// Sample templates data
-const templates = {
-    new_customer: {
-        name: 'New Customer Welcome',
-        content: `{{ template_content | safe }}`
-    }
-};
+let templates = {};
 
 document.addEventListener('DOMContentLoaded', function() {
-    loadTemplate('new_customer');
+    loadTemplatesList();
 });
 
-function loadTemplate(templateId) {
-    currentTemplate = templateId;
-    
-    // Update button states
-    document.querySelectorAll('.template-btn').forEach(btn => {
-        btn.classList.remove('bg-blue-50', 'text-blue-700');
-        btn.classList.add('text-gray-700');
+// Load list of all available templates
+async function loadTemplatesList() {
+    try {
+        const response = await fetch('/api/ticket-template/list');
+        const data = await response.json();
+        
+        if (data.success) {
+            const listContainer = document.getElementById('templatesList');
+            
+            if (data.templates.length === 0) {
+                listContainer.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">No templates found</p>';
+                return;
+            }
+            
+            listContainer.innerHTML = '';
+            data.templates.forEach(template => {
+                const templateItem = document.createElement('button');
+                templateItem.className = 'w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors border-2 border-transparent';
+                templateItem.id = `template-${template.id}`;
+                templateItem.onclick = () => loadTemplateFromList(template.id, template.filename);
+                
+                templateItem.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1 min-w-0">
+                            <p class="font-semibold text-sm text-gray-800 truncate">${template.name}</p>
+                            <p class="text-xs text-gray-500">${template.filename}</p>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-400 ml-2"></i>
+                    </div>
+                `;
+                
+                listContainer.appendChild(templateItem);
+                
+                // Store template data
+                templates[template.id] = template;
+            });
+            
+            // Load the first template or new_customer
+            const firstTemplate = data.templates[0];
+            if (firstTemplate) {
+                loadTemplateFromList(firstTemplate.id, firstTemplate.filename);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading templates list:', error);
+        showAlert('Failed to load templates list', 'danger');
+    }
+}
+
+// Highlight active template in list
+function highlightActiveTemplate(templateId) {
+    // Remove highlight from all templates
+    document.querySelectorAll('[id^="template-"]').forEach(el => {
+        el.classList.remove('border-blue-500', 'bg-blue-50');
     });
     
-    const activeBtn = document.getElementById(`btn-${templateId}`);
-    if (activeBtn) {
-        activeBtn.classList.add('bg-blue-50', 'text-blue-700');
-        activeBtn.classList.remove('text-gray-700');
+    // Add highlight to active template
+    const activeEl = document.getElementById(`template-${templateId}`);
+    if (activeEl) {
+        activeEl.classList.add('border-blue-500', 'bg-blue-50');
+    }
+}
+
+// Load template from list
+async function loadTemplateFromList(templateId, filename) {
+    try {
+        const response = await fetch(`/api/ticket-template/load/${templateId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            currentTemplate = templateId;
+            currentTemplateFile = filename;
+            
+            document.getElementById('templateName').value = data.name || templateId;
+            document.getElementById('templateSubject').value = data.subject || '';
+            document.getElementById('templateContent').value = data.content;
+            originalContent = data.content;
+            
+            highlightActiveTemplate(templateId);
+            updateStatus('Loaded', 'success');
+            setTimeout(() => updateStatus('Ready', 'ready'), 2000);
+        }
+    } catch (error) {
+        console.error('Error loading template:', error);
+        showAlert('Failed to load template', 'danger');
+    }
+}
+
+// Create new template
+function createNewTemplate() {
+    const newName = prompt('Enter new template name:');
+    if (!newName || !newName.trim()) {
+        return;
     }
     
-    // Load template data
-    const template = templates[templateId];
-    if (template) {
-        document.getElementById('templateName').value = template.name;
-        document.getElementById('templateSubject').value = template.subject || '';
-        document.getElementById('templateContent').value = template.content;
-        originalContent = template.content;
-        
-        updateStatus('Loaded', 'success');
-        setTimeout(() => updateStatus('Ready', 'ready'), 2000);
-    }
+    currentTemplate = 'new_template';
+    currentTemplateFile = '';
+    
+    document.getElementById('templateName').value = newName.trim();
+    document.getElementById('templateSubject').value = '';
+    document.getElementById('templateContent').value = '';
+    originalContent = '';
+    
+    // Remove highlight from all templates
+    document.querySelectorAll('[id^="template-"]').forEach(el => {
+        el.classList.remove('border-blue-500', 'bg-blue-50');
+    });
+    
+    updateStatus('New Template', 'ready');
+    showAlert('Enter template content and click "Save Template"', 'info');
 }
 
 function switchEditorMode(mode) {
@@ -292,15 +403,15 @@ function switchEditorMode(mode) {
 function updatePreview() {
     const content = document.getElementById('templateContent').value;
     const previewContent = content
-        .replace(/{customer_name}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">John Doe</span>')
-        .replace(/{order_ref}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">UIA202511-038109</span>')
-        .replace(/{site_id}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">SITE-12345</span>')
-        .replace(/{email}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">john@example.com</span>')
-        .replace(/{phone}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">555-0123</span>')
-        .replace(/{address}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">123 Main St</span>')
-        .replace(/{city}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">Springfield</span>')
-        .replace(/{state}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">IL</span>')
-        .replace(/{zip}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">62701</span>');
+        .replaceAll(/{customer_name}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">John Doe</span>')
+        .replaceAll(/{order_ref}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">UIA202511-038109</span>')
+        .replaceAll(/{site_id}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">SITE-12345</span>')
+        .replaceAll(/{email}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">john@example.com</span>')
+        .replaceAll(/{phone}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">555-0123</span>')
+        .replaceAll(/{address}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">123 Main St</span>')
+        .replaceAll(/{city}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">Springfield</span>')
+        .replaceAll(/{state}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">IL</span>')
+        .replaceAll(/{zip}/g, '<span class="bg-yellow-100 px-2 py-1 rounded">62701</span>');
     
     document.getElementById('previewContent').innerHTML = previewContent;
 }
@@ -329,11 +440,15 @@ async function saveTemplate() {
     updateStatus('Saving...', 'loading');
     
     try {
+        // Generate filename from template name
+        const filename = name.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '.txt';
+        
         const response = await fetch('/api/ticket-template/save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 template_id: currentTemplate,
+                filename: currentTemplateFile || filename,
                 name: name,
                 subject: subject,
                 content: content
@@ -347,8 +462,15 @@ async function saveTemplate() {
             updateStatus('Saved', 'success');
             originalContent = content;
             
-            // Update local template data
-            templates[currentTemplate] = { name, subject, content };
+            // Reload templates list
+            await loadTemplatesList();
+            
+            // Update current template reference
+            if (result.filename) {
+                currentTemplateFile = result.filename;
+                currentTemplate = result.filename.replace('.txt', '');
+                highlightActiveTemplate(currentTemplate);
+            }
         } else {
             showAlert('Failed to save template: ' + result.error, 'danger');
             updateStatus('Error', 'error');
@@ -356,6 +478,103 @@ async function saveTemplate() {
     } catch (error) {
         showAlert('Error saving template: ' + error.message, 'danger');
         updateStatus('Error', 'error');
+    }
+}
+
+async function saveAsNewTemplate() {
+    const newName = prompt('Enter new template name:');
+    if (!newName || !newName.trim()) {
+        return;
+    }
+    
+    const subject = document.getElementById('templateSubject').value.trim();
+    const content = document.getElementById('templateContent').value;
+    
+    if (!content) {
+        showAlert('Please enter template content', 'danger');
+        return;
+    }
+    
+    updateStatus('Saving...', 'loading');
+    
+    try {
+        // Generate filename from template name
+        const filename = newName.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '.txt';
+        
+        const response = await fetch('/api/ticket-template/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                template_id: 'new_template',
+                filename: filename,
+                name: newName.trim(),
+                subject: subject,
+                content: content
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('New template created successfully', 'success');
+            updateStatus('Saved', 'success');
+            
+            // Update form with new template
+            document.getElementById('templateName').value = newName.trim();
+            currentTemplateFile = result.filename || filename;
+            currentTemplate = currentTemplateFile.replace('.txt', '');
+            originalContent = content;
+            
+            // Reload templates list
+            await loadTemplatesList();
+            highlightActiveTemplate(currentTemplate);
+        } else {
+            showAlert('Failed to create template: ' + result.error, 'danger');
+            updateStatus('Error', 'error');
+        }
+    } catch (error) {
+        showAlert('Error creating template: ' + error.message, 'danger');
+        updateStatus('Error', 'error');
+    }
+}
+
+async function deleteTemplate() {
+    if (!currentTemplateFile) {
+        showAlert('No template selected to delete', 'warning');
+        return;
+    }
+    
+    if (!confirm(`Are you sure you want to delete "${document.getElementById('templateName').value}"?\n\nThis action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/ticket-template/delete/${currentTemplate}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename: currentTemplateFile })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showAlert('Template deleted successfully', 'success');
+            
+            // Clear form
+            document.getElementById('templateName').value = '';
+            document.getElementById('templateSubject').value = '';
+            document.getElementById('templateContent').value = '';
+            originalContent = '';
+            currentTemplate = '';
+            currentTemplateFile = '';
+            
+            // Reload templates list
+            await loadTemplatesList();
+        } else {
+            showAlert('Failed to delete template: ' + result.error, 'danger');
+        }
+    } catch (error) {
+        showAlert('Error deleting template: ' + error.message, 'danger');
     }
 }
 
@@ -379,7 +598,6 @@ function resetEditor() {
         showAlert('Template reset to last saved version', 'info');
     }
 }
-
 
 function updateStatus(text, type) {
     const colors = {

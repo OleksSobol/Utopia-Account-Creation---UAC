@@ -4,6 +4,7 @@ import json
 import logging
 import urllib3
 import requests
+import subprocess
 
 import powercode as PowerCode
 import utopia as Utopia
@@ -11,6 +12,7 @@ import config
 from failure_tracker import FailureTracker
 
 from config import *
+from dotenv import dotenv_values
 from flask_mail import Mail, Message
 from flask import Flask, request, jsonify, render_template, session, redirect, url_for
 from functools import wraps
@@ -56,7 +58,6 @@ class UtopiaAPIHandler:
 
         # Admin credentials
         self.admin_username = ADMIN_USER
-        self.admin_password = ADMIN_PASS
         
         # Initialize Flask-Mail
         self.mail = Mail(self.app)
@@ -66,6 +67,10 @@ class UtopiaAPIHandler:
         
         # Setup all routes
         self.setup_routes()
+
+    def _reload_config(self):
+        """Update instance variables after config reload"""
+        self.admin_username = config.ADMIN_USER
 
     def login_required(self, f):
         """
@@ -109,6 +114,12 @@ class UtopiaAPIHandler:
         self.app.route('/api/ticket-template/save', methods=['POST'])(self.login_required(self.save_ticket_template))
         self.app.route('/api/ticket-template/load/<template_id>', methods=['GET'])(self.login_required(self.load_ticket_template))
         self.app.route('/api/ticket-template/list', methods=['GET'])(self.login_required(self.list_ticket_templates))
+        self.app.route('/api/ticket-template/delete/<template_id>', methods=['DELETE'])(self.login_required(self.delete_ticket_template))
+
+        # Configuration management routes (protected)
+        self.app.route('/admin/config', methods=['GET'])(self.login_required(self.admin_config))
+        self.app.route('/api/config/update', methods=['POST'])(self.login_required(self.update_config))
+        self.app.route('/api/config/restart', methods=['POST'])(self.login_required(self.restart_application))
 
         # API callback route (no auth required - for webhook)
         self.app.route('/api-callback', methods=['GET', 'POST'])(self.api_callback)
@@ -158,7 +169,7 @@ class UtopiaAPIHandler:
         password = data.get('password', '')
         
         # Validate credentials
-        if username == self.admin_username and password == self.admin_password:
+        if username == self.admin_username and config.check_admin_password(password):
             session.permanent = True
             session['logged_in'] = True
             session['username'] = username
@@ -441,7 +452,7 @@ class UtopiaAPIHandler:
         GET /admin/ticket-editor - Returns the HTML template for editing ticket templates
         """
         # Load the default new customer template
-        template_path = os.path.join('ticket_descriptions', 'new_desc.txt')
+        template_path = os.path.join(TICKET_TEMPLATE_DIR, TICKET_TEMPLATE_FILE)
         template_content = ''
 
         try:
@@ -469,6 +480,7 @@ class UtopiaAPIHandler:
         try:
             data = request.get_json()
             template_id = data.get('template_id', 'new_customer')
+            filename = data.get('filename', '')
             name = data.get('name', '')
             subject = data.get('subject', '')
             content = data.get('content', '')
@@ -479,24 +491,23 @@ class UtopiaAPIHandler:
                     'error': 'Template content is required'
                 }), 400
             
-            # Create ticket_descriptions directory if it doesn't exist
-            templates_dir = 'ticket_descriptions'
+            if not name:
+                return jsonify({
+                    'success': False,
+                    'error': 'Template name is required'
+                }), 400
+            
+            # Create ticket template directory if it doesn't exist
+            templates_dir = TICKET_TEMPLATE_DIR
             if not os.path.exists(templates_dir):
                 os.makedirs(templates_dir)
             
-            # Map template IDs to file names
-            template_files = {
-                'new_customer': 'new_desc.txt',
-                'welcome': 'welcome_email.txt',
-                'installation': 'installation_info.txt',
-                'billing': 'billing_info.txt'
-            }
-            
-            # Get filename or create new one for custom templates
-            if template_id.startswith('custom_'):
-                filename = f"{template_id}.txt"
-            else:
-                filename = template_files.get(template_id, f"{template_id}.txt")
+            # If no filename provided, generate from name
+            if not filename:
+                filename = name.lower().replace(' ', '_').replace('-', '_')
+                # Remove special characters
+                filename = ''.join(c for c in filename if c.isalnum() or c == '_')
+                filename = f"{filename}.txt"
             
             file_path = os.path.join(templates_dir, filename)
             
@@ -504,22 +515,22 @@ class UtopiaAPIHandler:
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(content)
             
-            # Also save metadata if subject is provided
-            if subject:
-                meta_path = os.path.join(templates_dir, f"{filename}.meta.json")
-                metadata = {
-                    'name': name,
-                    'subject': subject,
-                    'last_modified': datetime.now().isoformat()
-                }
-                with open(meta_path, 'w', encoding='utf-8') as f:
-                    json.dump(metadata, f, indent=2)
+            # Save metadata
+            meta_path = os.path.join(templates_dir, f"{filename}.meta.json")
+            metadata = {
+                'name': name,
+                'subject': subject,
+                'last_modified': datetime.now().isoformat()
+            }
+            with open(meta_path, 'w', encoding='utf-8') as f:
+                json.dump(metadata, f, indent=2)
             
             logger.info(f"Ticket template saved: {filename} by {session.get('username')}")
             
             return jsonify({
                 'success': True,
                 'message': f'Template saved to {filename}',
+                'filename': filename,
                 'file_path': file_path
             }), 200
             
@@ -536,11 +547,11 @@ class UtopiaAPIHandler:
         GET /api/ticket-template/load/<template_id> - Returns template content
         """
         try:
-            templates_dir = 'ticket_descriptions'
+            templates_dir = TICKET_TEMPLATE_DIR
             
             # Map template IDs to file names
             template_files = {
-                'new_customer': 'new_desc.txt',
+                'new_customer': TICKET_TEMPLATE_FILE,
                 'welcome': 'welcome_email.txt',
                 'installation': 'installation_info.txt',
                 'billing': 'billing_info.txt'
@@ -588,7 +599,7 @@ class UtopiaAPIHandler:
         GET /api/ticket-template/list - Returns list of templates
         """
         try:
-            templates_dir = 'ticket_descriptions'
+            templates_dir = TICKET_TEMPLATE_DIR
             
             if not os.path.exists(templates_dir):
                 return jsonify({
@@ -632,6 +643,157 @@ class UtopiaAPIHandler:
             return jsonify({
                 'success': False,
                 'error': f'Server error: {str(e)}'
+            }), 500
+    
+    def delete_ticket_template(self, template_id):
+        """
+        Delete a ticket template file
+        DELETE /api/ticket-template/delete/<template_id> - Delete template and metadata
+        """
+        try:
+            data = request.get_json() or {}
+            filename = data.get('filename', '')
+            
+            if not filename:
+                return jsonify({
+                    'success': False,
+                    'error': 'Filename is required'
+                }), 400
+            
+            templates_dir = TICKET_TEMPLATE_DIR
+            file_path = os.path.join(templates_dir, filename)
+            meta_path = os.path.join(templates_dir, f"{filename}.meta.json")
+            
+            # Check if file exists
+            if not os.path.exists(file_path):
+                return jsonify({
+                    'success': False,
+                    'error': 'Template file not found'
+                }), 404
+            
+            # Prevent deletion of active template - read directly from .env to ensure we have the latest value
+            env_values = dotenv_values('.env')
+            active_template = env_values.get('TICKET_TEMPLATE_FILE', TICKET_TEMPLATE_FILE)
+            
+            if filename == active_template:
+                return jsonify({
+                    'success': False,
+                    'error': f'Cannot delete the active template "{filename}". Please change the active template in Configuration first.'
+                }), 400
+            
+            # Delete template file
+            os.remove(file_path)
+            
+            # Delete metadata file if exists
+            if os.path.exists(meta_path):
+                os.remove(meta_path)
+            
+            logger.info(f"Ticket template deleted: {filename} by {session.get('username')}")
+            
+            return jsonify({
+                'success': True,
+                'message': f'Template {filename} deleted successfully'
+            }), 200
+            
+        except Exception as e:
+            logger.error(f"Error deleting ticket template: {str(e)}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': f'Server error: {str(e)}'
+            }), 500
+    
+    def admin_config(self):
+        """
+        Renders the configuration management interface
+        GET /admin/config - Returns the HTML template for viewing/editing config settings
+        """
+        config_data = config.get_config_dict()
+        return render_template('config.html', config_data=config_data, session=session)
+    
+    def update_config(self):
+        """
+        Update configuration values and persist to .env file
+        POST /api/config/update - Expects JSON with config updates
+        """
+        try:
+            data = request.get_json()
+            updates = data.get('updates', {})
+            
+            if not updates:
+                return jsonify({'success': False, 'error': 'No updates provided'}), 400
+            
+            logger.info(f"Config update requested by {session.get('username')}: {list(updates.keys())}")
+            
+            # Update configuration file
+            updated_count, changes = config.update_config_file(updates)
+            
+            # Check if admin password was actually changed (look for it in the changes list)
+            password_changed = any('ADMIN_PASS' in change for change in changes)
+            
+            # Log individual changes
+            for change in changes:
+                logger.info(f"Updated {change}")
+            
+            # Reload configuration if changes were made
+            if updated_count > 0:
+                config.reload_config()
+                self._reload_config()
+                
+                logger.info(f"Configuration updated successfully: {updated_count} values changed")
+                logger.info("Configuration reloaded in memory")
+                
+                return jsonify({
+                    'success': True,
+                    'message': f'Successfully updated {updated_count} configuration value(s)',
+                    'updated_count': updated_count,
+                    'changes': changes,
+                    'restart_required': False,
+                    'logout_required': password_changed  # Force logout if password changed
+                }), 200
+            else:
+                logger.info("No configuration changes detected - all values are the same")
+                return jsonify({
+                    'success': True,
+                    'message': 'No changes detected - all values are already up to date',
+                    'updated_count': 0,
+                    'restart_required': False
+                }), 200
+            
+        except Exception as e:
+            logger.error(f"Error updating configuration: {str(e)}", exc_info=True)
+            return jsonify({'success': False, 'error': str(e)}), 500
+    
+    def restart_application(self):
+        """
+        Restart the application service
+        POST /api/config/restart - Triggers application restart via systemd
+        """
+        try:
+            logger.info(f"Application restart requested by {session.get('username')}")
+            
+            # Try to restart via systemd service
+            restart_command = "sudo systemctl restart api_callback.service"
+            
+            # Execute restart command in background
+            result = subprocess.Popen(
+                restart_command,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+            
+            logger.info("Restart command executed")
+            
+            return jsonify({
+                'success': True,
+                'message': 'Application restart initiated. Page will reload automatically.'
+            }), 200
+            
+        except Exception as e:
+            logger.error(f"Error restarting application: {str(e)}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': f'Failed to restart application: {str(e)}'
             }), 500
         
     def api_callback(self):
@@ -941,7 +1103,7 @@ class UtopiaAPIHandler:
         """
         try:
             # Load the template from file
-            template_path = os.path.join('ticket_descriptions', 'new_desc.txt')
+            template_path = os.path.join(TICKET_TEMPLATE_DIR, TICKET_TEMPLATE_FILE)
             
             if not os.path.exists(template_path):
                 logger.warning(f"Ticket template not found at {template_path}, using default")
