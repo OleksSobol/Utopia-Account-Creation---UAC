@@ -21,12 +21,14 @@ from datetime import timedelta, datetime
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Configure logging
+# Application logs go to app_main.log only
+# uWSGI system logs go to api_callback.log (configured in .ini file)
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(LOG_FILE),
-        logging.StreamHandler()
+        logging.FileHandler(LOG_FILE)
+        # Removed StreamHandler() to prevent logs going to uWSGI
     ]
 )
 logger = logging.getLogger(__name__)

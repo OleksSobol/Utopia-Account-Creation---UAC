@@ -52,21 +52,21 @@ def create_powercode_account(customer_info, max_retries=3, retry_delay=5):
 
         try:
             PC_response = requests.post(config.PC_URL_API, data=account_data, verify=PC_VERIFY_SSL)
-            print(PC_response.json())
+            # print(PC_response.json())
 
             if 'customerID' in PC_response.json():
                 # Account created successfully
                 PC_customer_id = PC_response.json()['customerID']
-                print(f"Powercode account created successfully. Customer ID: {PC_customer_id}")
+                # print(f"Powercode account created successfully. Customer ID: {PC_customer_id}")
                 return PC_customer_id
             elif PC_response.json().get('statusCode') == 23:
                 # Geocoding failed, retry with physicalAutomaticallyGeocode set to 0
-                print("Geocoding failed. Retrying with physicalAutomaticallyGeocode set to 0.")
+                # print("Geocoding failed. Retrying with physicalAutomaticallyGeocode set to 0.")
                 account_data["physicalAutomaticallyGeocode"] = 0
                 time.sleep(retry_delay)
             else:
                 # Other error, stop retrying
-                print(f"Failed to create Powercode account. Response: {PC_response.json()}")
+                # print(f"Failed to create Powercode account. Response: {PC_response.json()}")
                 error_message = PC_response.json().get('message', 'Unknown error in Powercode')
                 #utopia_handler.send_email("Failed to create Powercode account", f"Error message: {error_message}")
                 break
@@ -87,7 +87,7 @@ def read_powercode_account(customerID):
     }
 
     PC_response = requests.post(config.PC_URL_API, data=account_data, verify=PC_VERIFY_SSL)
-    print(PC_response.json())
+    return PC_response
 
 # Read account
 def get_customer_by_external_id(external_id):
@@ -98,7 +98,7 @@ def get_customer_by_external_id(external_id):
     }
 
     PC_response = requests.post(config.PC_URL_API, data=account_data, verify=PC_VERIFY_SSL)
-    print(PC_response.json())
+    return PC_response
 
 
 # Search customer
@@ -170,7 +170,7 @@ def read_powercode_ticket(ticket_id):
     # after ticket created, response will contain ticketID that will be need for reply ticket
     # {'message': 'Ticket created', 'statusCode': 0, 'ticketID': '15'}
 
-    print(PC_response.json())
+    # print(PC_response.json())
 
 
     return PC_response

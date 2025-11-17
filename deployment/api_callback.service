@@ -1,0 +1,25 @@
+[Unit]
+Description=uWSGI instance to serve API POST for utopia
+After=network.target
+
+[Service]
+Type=exec
+User=gnapi
+Group=gnapi
+WorkingDirectory=/home/gnapi/UAC-Utopia-Account-Creation
+ExecStart=/home/gnapi/UAC-Utopia-Account-Creation/venv/bin/uwsgi --ini api_callback.ini
+
+# Restart configuration
+Restart=always
+RestartSec=5
+
+# Shutdown handling for uWSGI
+TimeoutStopSec=15
+KillMode=mixed
+KillSignal=SIGTERM
+
+# Environment file (optional for future use)
+# EnvironmentFile=/home/gnapi/UAC-Utopia-Account-Creation/.env
+
+[Install]
+WantedBy=multi-user.target
