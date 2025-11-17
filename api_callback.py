@@ -35,6 +35,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Disable Flask/Werkzeug HTTP request logging to keep logs clean
+logging.getLogger('werkzeug').setLevel(logging.ERROR)
+logging.getLogger('werkzeug').disabled = True
+
 
 def pretty_log_json(data, title=""):
     """Pretty print JSON data for logging with proper indentation"""
@@ -120,6 +124,11 @@ class UtopiaAPIHandler:
         self.app.route('/admin/config', methods=['GET'])(self.login_required(self.admin_config))
         self.app.route('/api/config/update', methods=['POST'])(self.login_required(self.update_config))
         self.app.route('/api/config/restart', methods=['POST'])(self.login_required(self.restart_application))
+
+        # Log viewer routes (protected)
+        self.app.route('/admin/logs', methods=['GET'])(self.login_required(self.admin_logs))
+        self.app.route('/api/logs/read', methods=['GET'])(self.login_required(self.read_logs))
+        self.app.route('/api/logs/download', methods=['GET'])(self.login_required(self.download_logs))
 
         # API callback route (no auth required - for webhook)
         self.app.route('/api-callback', methods=['GET', 'POST'])(self.api_callback)
@@ -794,6 +803,86 @@ class UtopiaAPIHandler:
             return jsonify({
                 'success': False,
                 'error': f'Failed to restart application: {str(e)}'
+            }), 500
+    
+    def admin_logs(self):
+        """
+        Renders the log viewer interface
+        GET /admin/logs - Returns the HTML template for viewing application logs
+        """
+        return render_template('logs.html', session=session, log_file=LOG_FILE)
+    
+    def read_logs(self):
+        """
+        Read log file and return content
+        GET /api/logs/read?lines=100&search=error - Returns log content with optional filters
+        """
+        try:
+            lines = int(request.args.get('lines', 100))
+            search = request.args.get('search', '').lower()
+            
+            if not os.path.exists(LOG_FILE):
+                return jsonify({
+                    'success': True,
+                    'content': 'Log file does not exist yet.',
+                    'total_lines': 0
+                }), 200
+            
+            # Read the file
+            with open(LOG_FILE, 'r', encoding='utf-8', errors='ignore') as f:
+                all_lines = f.readlines()
+            
+            # Apply search filter if provided
+            if search:
+                filtered_lines = [line for line in all_lines if search in line.lower()]
+            else:
+                filtered_lines = all_lines
+            
+            # Get the last N lines
+            tail_lines = filtered_lines[-lines:] if len(filtered_lines) > lines else filtered_lines
+            
+            content = ''.join(tail_lines)
+            
+            return jsonify({
+                'success': True,
+                'content': content,
+                'total_lines': len(all_lines),
+                'filtered_lines': len(filtered_lines),
+                'displayed_lines': len(tail_lines)
+            }), 200
+            
+        except Exception as e:
+            logger.error(f"Error reading logs: {str(e)}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': f'Failed to read logs: {str(e)}'
+            }), 500
+    
+    def download_logs(self):
+        """
+        Download the entire log file
+        GET /api/logs/download - Returns log file as download
+        """
+        try:
+            if not os.path.exists(LOG_FILE):
+                return jsonify({
+                    'success': False,
+                    'error': 'Log file does not exist'
+                }), 404
+            
+            from flask import send_file
+            return send_file(
+                LOG_FILE,
+                as_attachment=True,
+                download_name=f"app_logs_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log",
+                mimetype='text/plain'
+            )
+            
+        except Exception as e:
+            logger.error(f"Error downloading logs: {str(e)}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': f'Failed to download logs: {str(e)}'
             }), 500
         
     def api_callback(self):

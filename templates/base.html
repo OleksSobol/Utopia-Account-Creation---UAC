@@ -110,6 +110,10 @@
                         <i class="fas fa-file-alt mr-2"></i>
                         Ticket Editor
                     </a>
+                    <a href="/admin/logs" class="flex items-center px-4 py-2 rounded-lg {% if request.path == '/admin/logs' %}bg-teal-50 text-teal-600{% else %}text-gray-600 hover:bg-gray-100{% endif %} font-semibold">
+                        <i class="fas fa-stream mr-2"></i>
+                        Logs
+                    </a>
                     <a href="/admin/config" class="flex items-center px-4 py-2 rounded-lg {% if request.path == '/admin/config' %}bg-green-50 text-green-600{% else %}text-gray-600 hover:bg-gray-100{% endif %} font-semibold">
                         <i class="fas fa-cog mr-2"></i>
                         Config
