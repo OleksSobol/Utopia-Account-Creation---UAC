@@ -1035,10 +1035,11 @@ class UtopiaAPIHandler:
         firstname = customer_from_utopia.get("customer", {}).get("firstname", "")
         lastname = customer_from_utopia.get("customer", {}).get("lastname", "")
         utopia_city = customer_from_utopia.get("address", {}).get("city", "")
-        
-        # Use shared duplicate checking logic
+        utopia_address = customer_from_utopia.get("address", {}).get("address", "")
+
+        # Check if customer already exists
         logger.info("Checking for existing customer in PowerCode...")
-        exists, matching_customer = self.check_customer_exists(firstname, lastname, utopia_city)
+        exists, matching_customer = self.check_customer_exists(firstname, lastname, utopia_city, utopia_address)
 
         if exists:
             # Customer exists - send notification
@@ -1110,25 +1111,10 @@ class UtopiaAPIHandler:
     def process_customer_creation(self, customer_data, orderref, service_plan):
         """
         Core customer creation workflow
-        Handles: duplicate check → create account → add plans → create ticket → send email
-        Returns: (success, customer_id, error_message, ticket_id)
+        Handles:  create account → add plans → create ticket > add tags → send email
+        Returns: (success, customer_id, error_message, ticket_id, )
         """
         try:
-            # Extract customer info for duplicate check
-            firstname = customer_data.get("firstname", "")
-            lastname = customer_data.get("lastname", "")
-            city = customer_data.get("city", "")
-            address = customer_data.get("address", {}).get("address", "")
-
-            customer_full_name = f"{firstname} {lastname}".strip()
-            
-            # Check if customer already exists
-            exists, matching_customer = self.check_customer_exists(firstname, lastname, city, utopia_address=address)
-            if exists:
-                error_msg = f'Customer already exists in PowerCode with ID: {matching_customer.get("CustomerID")}'
-                logger.warning(error_msg)
-                return False, matching_customer.get('CustomerID'), error_msg, None
-            
             # Create customer in PowerCode
             logger.info(f"Creating PowerCode account for orderref={orderref}")
             customer_id = PowerCode.create_powercode_account(customer_data)
@@ -1199,12 +1185,12 @@ class UtopiaAPIHandler:
         for customer in customers_list:
             pc_full_name = customer.get("CompanyName", "")
             pc_city = customer.get("City", "")
+            pc_address = customer.get("Address1", "").strip().upper()
             
             # First check: name and city match
             if pc_full_name == utopia_full_name and pc_city == city:
                 # If we have address data, compare addresses
                 if utopia_address:
-                    pc_address = customer.get("Address1", "").strip().upper()
                     utopia_addr = utopia_address.strip().upper()
                     
                     # If addresses are different, this is NOT a duplicate (different location)
