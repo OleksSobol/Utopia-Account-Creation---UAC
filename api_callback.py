@@ -365,7 +365,7 @@ class UtopiaAPIHandler:
             failures = self.failure_tracker.get_failure_list(include_resolved=include_resolved)
             stats = self.failure_tracker.get_failure_stats()
             
-            logger.info(f"Failures retrieved by {session.get('username')}: {len(failures)} total")
+            # logger.info(f"Failures retrieved by {session.get('username')}: {len(failures)} total")
             
             return jsonify({
                 'success': True,
@@ -1127,7 +1127,7 @@ class UtopiaAPIHandler:
             plans_success, plan_responses = self.add_service_plans(customer_id, service_plan)
             if not plans_success:
                 logger.warning(f"Some service plans failed to add for customer {customer_id}")
-            
+
             # Create PowerCode Ticket
             ticket_description = self.get_ticket_description(customer_data)
             ticket_id = PowerCode.create_powercode_ticket(
@@ -1138,6 +1138,14 @@ class UtopiaAPIHandler:
 
             # ticket_id = PowerCode.create_powercode_ticket(customer_id, customer_data.get("firstname", ""))
             logger.info(f'Support ticket created: {ticket_id} for customer {customer_id}')
+
+            # Add Customer Tags
+            tags_success, tags_added = self.add_customer_tags(customer_id, config.PC_CUST_TAGS)
+            if tags_success:
+                logger.info(f"Added tags to customer {customer_id}: {tags_added}")
+            else:
+                logger.warning(f"Failed to add tags {config.PC_CUST_TAGS} for customer {customer_id}")
+            
             
             # Send Success Email
             formatted_customer_info = self.format_contact_info(customer_data)
@@ -1223,6 +1231,26 @@ class UtopiaAPIHandler:
             logger.error(f"Error adding service plans to customer {customer_id}: {str(e)}", exc_info=True)
             return False, responses
         
+    
+    def add_customer_tags(self, customer_id, tags_id):
+        """
+        Add tags to a customer using PowerCode UAPI.
+        Returns (success: bool, tags: list)
+        """
+        tags_str = ','.join(str(tag) for tag in tags_id)
+        response = PowerCode.add_customer_tag(customer_id, tags_str)
+        try:
+            result = json.loads(response)
+        except Exception as e:
+            logger.error(f"Failed to parse tag response for customer {customer_id}: {response}", exc_info=True)
+            return False, []
+
+        if result.get("Success"):
+            return True, result.get("Response", [])
+        else:
+            logger.error(f"Failed to add tags {tags_id} for customer {customer_id}: {result}")
+            return False, []
+
 
     def get_ticket_description(self, customer_data):
         """

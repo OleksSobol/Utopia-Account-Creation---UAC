@@ -38,10 +38,11 @@ UTOPIA_API_KEY = os.getenv("UTOPIA_API_KEY")
 # ============================================================================
 PC_URL = os.getenv('PC_URL')
 PC_URL_API = os.getenv('PC_URL_API')
+PC_URL_UAPI = os.getenv('PC_URL_UAPI')
 PC_addressRangev4 = int(os.getenv('PC_ADDRESS_RANGE_V4', '10228'))
-
-# PowerCode API Endpoints (URL paths)
-
+PC_UAPI_USERNAME = os.getenv("PC_UAPI_USERNAME")
+PC_UAPI_PASSWORD = os.getenv("PC_UAPI_PASSWORD")
+PC_CUST_TAGS = os.getenv("PC_CUST_TAGS")
 
 
 # Service Plan IDs (PowerCode)
@@ -102,6 +103,9 @@ def validate_config():
         'UTOPIA_API_KEY',
         'PC_URL',
         'PC_URL_API',
+        'PC_URL_UAPI',
+        'PC_UAPI_USERNAME',
+        'PC_UAPI_PASSWORD',
         'UTOPIA_URL_ENDPOINT',
         'MAIL_SERVER',
         'EMAIL_SENDER',

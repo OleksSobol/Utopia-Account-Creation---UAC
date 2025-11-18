@@ -5,6 +5,7 @@ import time
 import config
 import requests
 
+from requests.auth import HTTPBasicAuth
 from config import PC_VERIFY_SSL, CUSTOMER_PORTAL_PASSWORD
 
 def create_powercode_account(customer_info, max_retries=3, retry_delay=5):
@@ -194,6 +195,54 @@ def add_customer_service_plan(customer_id, service_plan_id):
 
     return pc_response.json()
 
+#
+# 
+#
+
+def get_customer_tags(customer_id):
+    """
+    Get tags for a specific customer
+    """
+    payload = {} # Required by UAPI
+    headers = {} # Required by UAPI
+
+    endpoint = f"customer/tags/customer?customerID={customer_id}"
+
+    full_url = config.PC_URL_UAPI + endpoint
+    
+    response = requests.request("GET", full_url, headers=headers, data=payload, 
+                               auth=HTTPBasicAuth(config.PC_UAPI_USERNAME, config.PC_UAPI_PASSWORD), verify=PC_VERIFY_SSL)
+    return response.text
+
+# {"Success":true,"Response":[{"TagID":5,"TagName":"Bridged Handoff"},{"TagID":9,"TagName":"Yellowstone Fiber Customer"}]}
+def add_customer_tag(customer_id, tags_id_list):
+    """
+    Add a tags to a customer
+    """
+    payload = {} # Required by UAPI
+    headers = {} # Required by UAPI
+
+    endpoint = f"customer/tags/customer?customerID={customer_id}&tags[]={tags_id_list}"
+    full_url = config.PC_URL_UAPI + endpoint
+    
+    response = requests.request("POST", full_url, headers=headers, data=payload, 
+                               auth=HTTPBasicAuth(config.PC_UAPI_USERNAME, config.PC_UAPI_PASSWORD), verify=PC_VERIFY_SSL)
+    return response.text
+
+def delete_customer_tag(customer_id, tags_id):
+    """
+    Add a tags to a customer
+    """
+    payload = {} # Required by UAPI
+    headers = {} # Required by UAPI
+
+    endpoint = f"customer/tags/customer?customerID={customer_id}&tags[]={tags_id}"
+
+    full_url = config.PC_URL_UAPI + endpoint
+    
+    response = requests.request("DELETE", full_url, headers=headers, data=payload, 
+                               auth=HTTPBasicAuth(config.PC_UAPI_USERNAME, config.PC_UAPI_PASSWORD), verify=PC_VERIFY_SSL)
+    return response.text
 
     
 def read_custom_action(action):
