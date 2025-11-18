@@ -64,6 +64,18 @@ class FailureTracker:
         except Exception as e:
             logger.error(f"Error saving failure data: {e}")
     
+    def _generate_unique_orderref(self) -> str:
+        """
+        Generate a unique orderref for failures without an order reference
+        
+        Returns:
+            Unique identifier string
+        """
+        # Use timestamp + short UUID for uniqueness
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        short_uuid = str(uuid.uuid4())[:8]
+        return f"UNKNOWN_{timestamp}_{short_uuid}"
+    
     def record_failure(self, orderref: str, error_message: str, failure_type: str = "customer_creation", 
                       customer_data: Optional[Dict] = None):
         """
@@ -75,6 +87,13 @@ class FailureTracker:
             failure_type: Type of failure (customer_creation, service_plan, etc.)
             customer_data: Optional customer data for debugging
         """
+        
+         # Generate unique orderref if empty or None
+        original_orderref = orderref
+        if not orderref or not orderref.strip():
+            orderref = self._generate_unique_orderref()
+            logger.warning(f"No orderref provided, generated: {orderref}")
+       
         failures = self._load_failures()
         
         failure_record = {
