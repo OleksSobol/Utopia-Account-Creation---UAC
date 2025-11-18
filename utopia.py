@@ -21,8 +21,8 @@ def getCustomerFromUtopia(orderref):
         data = response.json()
         # print(printCustomerInfo(data))
     else:
-        # print(response.json())
-        data = "Error"
+        data = response.json()
+
     return data
 
 
