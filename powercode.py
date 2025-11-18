@@ -58,7 +58,7 @@ def create_powercode_account(customer_info, max_retries=3, retry_delay=5):
             if 'customerID' in PC_response.json():
                 # Account created successfully
                 PC_customer_id = PC_response.json()['customerID']
-                # print(f"Powercode account created successfully. Customer ID: {PC_customer_id}")
+                print(f"Powercode account created successfully: {PC_response}")
                 return PC_customer_id
             elif PC_response.json().get('statusCode') == 23:
                 # Geocoding failed, retry with physicalAutomaticallyGeocode set to 0
@@ -77,6 +77,7 @@ def create_powercode_account(customer_info, max_retries=3, retry_delay=5):
             time.sleep(retry_delay)
 
     print(f"Failed to create Powercode account after {max_retries} attempts.")
+    print(f"Powercode returned: {PC_response}")
     return -1
 
 
