@@ -913,9 +913,10 @@ class UtopiaAPIHandler:
             orderref = request_data.get('orderref')
             msg = request_data.get('msg')
             
-            logger.info(f"Processing webhook - event: {event}, orderref: {orderref}, msg: {msg}")
+            # logger.info(f"Processing webhook - event: {event}, orderref: {orderref}, msg: {msg}")
             
             self.handle_information_from_post(event, orderref, msg)
+
             response = {"data": "Information received"}
         except KeyError as e:
             logger.error(f"Missing key in JSON payload: {str(e)}")
@@ -924,13 +925,13 @@ class UtopiaAPIHandler:
         except Exception as e:
             error = f"Error processing API callback: {str(e)}"
             logger.error(error, exc_info=True)
-
+    
             self.failure_tracker.record_failure(
                 orderref=orderref,
                 error_message=error,
                 failure_type="powercode_api_error"
             )
-            
+
             response = {"error": "Error processing API callback"}
             return jsonify(response), 400
 
@@ -948,7 +949,7 @@ class UtopiaAPIHandler:
                 f'Test webhook received for orderref: {orderref}\nEvent: {event}'
             )
         else:
-            logger.warning(f"Ignoring Unhandled event: {msg} for orderref: {orderref}")
+            logger.warning(f"Ignoring unhandled event: {msg} for orderref: {orderref}")
 
     def handle_new_order(self, orderref):
         """
@@ -991,25 +992,6 @@ class UtopiaAPIHandler:
             
             return
         
-        # Legacy check for old "Error" string response
-        # if customer_from_utopia == "Error":
-        #     error_msg = f"Failed to fetch customer from Utopia for order {orderref}"
-        #     logger.error(error_msg)
-            
-        #     # Record failure in tracking system
-        #     self.failure_tracker.record_failure(
-        #         orderref=orderref,
-        #         error_message="Utopia API returned error - invalid orderref or API issue",
-        #         failure_type="utopia_api_error"
-        #     )
-            
-        #     self.send_email(
-        #         f"Failed to fetch customer data from Utopia - Order {orderref}",
-        #         f"Utopia API returned error for orderref: {orderref}\n\nPlease verify the order reference is correct.",
-        #         orderref
-        #     )
-        #     return
-
         # Transform Utopia data to PowerCode format
         customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
         
@@ -1100,10 +1082,11 @@ class UtopiaAPIHandler:
             firstname = customer_data.get("firstname", "")
             lastname = customer_data.get("lastname", "")
             city = customer_data.get("city", "")
+            address = customer_data.get("address","")
             customer_full_name = f"{firstname} {lastname}".strip()
             
             # Check if customer already exists
-            exists, matching_customer = self.check_customer_exists(firstname, lastname, city)
+            exists, matching_customer = self.check_customer_exists(firstname, lastname, city, utopia_address=address)
             if exists:
                 error_msg = f'Customer already exists in PowerCode with ID: {matching_customer.get("CustomerID")}'
                 logger.warning(error_msg)
@@ -1164,9 +1147,10 @@ class UtopiaAPIHandler:
             return False, -1, error_msg, None
 
 
-    def check_customer_exists(self, firstname, lastname, city):
+    def check_customer_exists(self, firstname, lastname, city, utopia_address=None):
         """
         Check if customer already exists in PowerCode
+        Compares name first, then address if names match
         Returns: (exists, matching_customer_or_none)
         """
         utopia_full_name = f"{firstname} {lastname}".strip()
@@ -1179,12 +1163,32 @@ class UtopiaAPIHandler:
             pc_full_name = customer.get("CompanyName", "")
             pc_city = customer.get("City", "")
             
-            # Match by full name and city
-            # TODO: if name is same but address are different go ahead and create account
-
+            # First check: name and city match
             if pc_full_name == utopia_full_name and pc_city == city:
-                logger.info(f"Found existing customer: {pc_full_name} (ID: {customer.get('CustomerID')})")
-                return True, customer
+                # If we have address data, compare addresses
+                if utopia_address:
+                    pc_address = customer.get("Address1", "").strip().upper()
+                    utopia_addr = utopia_address.strip().upper()
+                    
+                    # If addresses are different, this is NOT a duplicate (different location)
+                    if pc_address != utopia_addr:
+                        logger.info(
+                            f"Found customer with same name ({pc_full_name}) but different address. "
+                            f"PowerCode: '{pc_address}' vs Utopia: '{utopia_addr}'. "
+                            f"Will create new account."
+                        )
+                        continue  # Keep searching, this is not a match
+                    else:
+                        # Same name, same city, same address = duplicate
+                        logger.info(
+                            f"Found existing customer: {pc_full_name} (ID: {customer.get('CustomerID')}) "
+                            f"with matching address: {pc_address}"
+                        )
+                        return True, customer
+                else:
+                    # No address provided for comparison, match on name and city only
+                    logger.info(f"Found existing customer: {pc_full_name} (ID: {customer.get('CustomerID')})")
+                    return True, customer
         
         logger.info(f"No existing customer found for: {utopia_full_name}")
         return False, None
