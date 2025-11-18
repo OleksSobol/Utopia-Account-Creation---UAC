@@ -912,12 +912,7 @@ class UtopiaAPIHandler:
             event = request_data.get('event')
             orderref = request_data.get('orderref')
             msg = request_data.get('msg')
-
-            # Check if any required fields are missing or empty
-            if not event or not orderref or not msg:
-                logger.error(f"Missing required fields - event: {event}, orderref: {orderref}, msg: {msg}")
-                raise ValueError("Missing required fields in JSON payload")
-
+            
             logger.info(f"Processing webhook - event: {event}, orderref: {orderref}, msg: {msg}")
             
             self.handle_information_from_post(event, orderref, msg)
@@ -953,7 +948,7 @@ class UtopiaAPIHandler:
                 f'Test webhook received for orderref: {orderref}\nEvent: {event}'
             )
         else:
-            logger.warning(f"Unhandled event: {msg} for orderref: {orderref}")
+            logger.warning(f"Ignoring Unhandled event: {msg} for orderref: {orderref}")
 
     def handle_new_order(self, orderref):
         """
