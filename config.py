@@ -192,6 +192,7 @@ def get_config_dict():
             'SERVICE_PLAN_1GBPS_ID': SERVICE_PLAN_1GBPS_ID,
             'SERVICE_PLAN_250MBPS_ID': SERVICE_PLAN_250MBPS_ID,
             'SERVICE_PLAN_BOND_FEE_ID': SERVICE_PLAN_BOND_FEE_ID,
+            'PC_CUST_TAGS': PC_CUST_TAGS,
             'CUSTOMER_PORTAL_PASSWORD': CUSTOMER_PORTAL_PASSWORD,
         },
         'utopia': {
