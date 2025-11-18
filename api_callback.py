@@ -229,7 +229,16 @@ class UtopiaAPIHandler:
             # Call the Utopia API function
             result = Utopia.getCustomerFromUtopia(orderref)
             
-            # Check if result is an error string
+            # Check for error responses from Utopia API
+            if isinstance(result, dict) and "error" in result:
+                utopia_error_msg = result.get("error", "Unknown error")
+                logger.error(f"Admin lookup failed for orderref: {orderref} - Utopia error: {utopia_error_msg}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Utopia API error: {utopia_error_msg}'
+                }), 404
+            
+            # Legacy check for old "Error" string response
             if result == "Error" or isinstance(result, str):
                 logger.error(f"Admin lookup failed for orderref: {orderref}")
                 return jsonify({
@@ -940,11 +949,11 @@ class UtopiaAPIHandler:
             self.handle_new_order(orderref)
         elif msg == "Test":
             self.send_email(
-                f"Webhook Test Received",
+                f"Test Received",
                 f'Test webhook received for orderref: {orderref}\nEvent: {event}'
             )
         else:
-            logger.warning(f"Unhandled message type: {msg} for orderref: {orderref}")
+            logger.warning(f"Unhandled event: {msg} for orderref: {orderref}")
 
     def handle_new_order(self, orderref):
         """
@@ -959,24 +968,52 @@ class UtopiaAPIHandler:
         
         logger.info(pretty_log_json(customer_from_utopia, "Response from Utopia"))
 
-        # Check for error FIRST before trying to access dict methods
-        if customer_from_utopia == "Error":
-            error_msg = f"Failed to fetch customer from Utopia for order {orderref}"
+        # Check for error responses from Utopia API
+        if isinstance(customer_from_utopia, dict) and "error" in customer_from_utopia:
+            utopia_error_msg = customer_from_utopia.get("error", "Unknown error")
+            error_msg = f"Utopia API error for order {orderref}: {utopia_error_msg}"
             logger.error(error_msg)
             
-            # Record failure in tracking system
+            # Record failure in tracking system with specific Utopia error
             self.failure_tracker.record_failure(
                 orderref=orderref,
-                error_message="Utopia API returned error - invalid orderref or API issue",
+                error_message=f"Utopia API error: {utopia_error_msg}",
                 failure_type="utopia_api_error"
             )
             
-            self.send_email(
-                f"Failed to fetch customer data from Utopia - Order {orderref}",
-                f"Utopia API returned error for orderref: {orderref}\n\nPlease verify the order reference is correct.",
-                orderref
-            )
+            # Only send email if it's not the "No valid records found for this ISP" error
+            if "No valid records found for this ISP" not in utopia_error_msg:
+                # Send email with specific Utopia error message
+                self.send_email(
+                    f"Utopia API Error - Order {orderref}",
+                    f"Failed to fetch customer data from Utopia API\n\n"
+                    f"Order Reference: {orderref}\n"
+                    f"Error Message: {utopia_error_msg}\n\n",
+                    orderref
+                )
+            else:
+                logger.info(f"Skipping email notification for 'No valid records' error - orderref: {orderref}")
+            
             return
+        
+        # Legacy check for old "Error" string response
+        # if customer_from_utopia == "Error":
+        #     error_msg = f"Failed to fetch customer from Utopia for order {orderref}"
+        #     logger.error(error_msg)
+            
+        #     # Record failure in tracking system
+        #     self.failure_tracker.record_failure(
+        #         orderref=orderref,
+        #         error_message="Utopia API returned error - invalid orderref or API issue",
+        #         failure_type="utopia_api_error"
+        #     )
+            
+        #     self.send_email(
+        #         f"Failed to fetch customer data from Utopia - Order {orderref}",
+        #         f"Utopia API returned error for orderref: {orderref}\n\nPlease verify the order reference is correct.",
+        #         orderref
+        #     )
+        #     return
 
         # Transform Utopia data to PowerCode format
         customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
@@ -1140,6 +1177,8 @@ class UtopiaAPIHandler:
             pc_city = customer.get("City", "")
             
             # Match by full name and city
+            # TODO: if name is same but address are different go ahead and create account
+
             if pc_full_name == utopia_full_name and pc_city == city:
                 logger.info(f"Found existing customer: {pc_full_name} (ID: {customer.get('CustomerID')})")
                 return True, customer

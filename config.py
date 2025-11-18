@@ -40,6 +40,10 @@ PC_URL = os.getenv('PC_URL')
 PC_URL_API = os.getenv('PC_URL_API')
 PC_addressRangev4 = int(os.getenv('PC_ADDRESS_RANGE_V4', '10228'))
 
+# PowerCode API Endpoints (URL paths)
+
+
+
 # Service Plan IDs (PowerCode)
 SERVICE_PLAN_1GBPS_ID = int(os.getenv('SERVICE_PLAN_1GBPS_ID', '164'))
 SERVICE_PLAN_250MBPS_ID = int(os.getenv('SERVICE_PLAN_250MBPS_ID', '163'))
