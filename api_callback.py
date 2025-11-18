@@ -133,9 +133,30 @@ class UtopiaAPIHandler:
         # API callback route (no auth required - for webhook)
         self.app.route('/api-callback', methods=['GET', 'POST'])(self.api_callback)
         
+        # User password change route
+        self.app.route('/api/user/change-password', methods=['POST'])(self.login_required(self.change_password_api))
+        
         # Error handlers
         self.app.errorhandler(404)(self.not_found)
         self.app.errorhandler(500)(self.server_error)
+        
+    def change_password_api(self):
+        """
+        API endpoint for logged-in users to change their password
+        POST /api/user/change-password - Expects JSON with new_password
+        """
+        username = session.get('username')
+        if not username:
+            return jsonify({'success': False, 'error': 'Not logged in.'}), 401
+        data = request.get_json()
+        new_password = data.get('new_password', '').strip()
+        if not new_password:
+            return jsonify({'success': False, 'error': 'No new password provided.'}), 400
+        success, error = config.change_user_password(username, new_password)
+        if success:
+            return jsonify({'success': True}), 200
+        else:
+            return jsonify({'success': False, 'error': error or 'Failed to change password.'}), 400
 
     def index(self):
         """Root route - redirect based on auth status"""
@@ -176,17 +197,27 @@ class UtopiaAPIHandler:
         data = request.get_json()
         username = data.get('username', '').strip()
         password = data.get('password', '')
-        
-        # Validate credentials
+
+        users = config.load_users()
+        # Check credentials against users.json
+        for user in users:
+            if user['username'] == username and config.verify_password(password, user['password']):
+                session.permanent = True
+                session['logged_in'] = True
+                session['username'] = username
+                logger.info(f"User '{username}' logged in successfully from IP: {request.remote_addr}")
+                return jsonify({'success': True}), 200
+
+        # Fallback to legacy admin credentials
         if username == self.admin_username and config.check_admin_password(password):
             session.permanent = True
             session['logged_in'] = True
             session['username'] = username
             logger.info(f"User '{username}' logged in successfully from IP: {request.remote_addr}")
             return jsonify({'success': True}), 200
-        else:
-            logger.warning(f"Failed login attempt for username: {username} from IP: {request.remote_addr}")
-            return jsonify({'success': False, 'error': 'Invalid username or password'}), 401
+
+        logger.warning(f"Failed login attempt for username: {username} from IP: {request.remote_addr}")
+        return jsonify({'success': False, 'error': 'Invalid username or password'}), 401
 
     def logout(self):
         """
@@ -725,6 +756,11 @@ class UtopiaAPIHandler:
         Renders the configuration management interface
         GET /admin/config - Returns the HTML template for viewing/editing config settings
         """
+        username = session.get("username")
+        users = config.load_users()
+        user = next((u for u in users if u['username'] == username), None)
+        if not user or not user.get('can_view_config', False):
+            return render_template('403.html'), 403
         config_data = config.get_config_dict()
         return render_template('config.html', config_data=config_data, session=session)
     
@@ -1082,7 +1118,8 @@ class UtopiaAPIHandler:
             firstname = customer_data.get("firstname", "")
             lastname = customer_data.get("lastname", "")
             city = customer_data.get("city", "")
-            address = customer_data.get("address","")
+            address = customer_data.get("address", {}).get("address", "")
+
             customer_full_name = f"{firstname} {lastname}".strip()
             
             # Check if customer already exists

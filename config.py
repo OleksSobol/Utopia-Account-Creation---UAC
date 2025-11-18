@@ -3,8 +3,10 @@ Configuration module for UAC-Utopia Account Creation
 Loads all configuration from environment variables (.env file)
 """
 import os
-import warnings
+import json
 import bcrypt
+import warnings
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -139,8 +141,35 @@ validate_config()
 
 
 # ============================================================================
+# Users Management
+# ============================================================================
+USERS_FILE = os.path.join(os.path.dirname(__file__), 'users.json')
+
+def load_users():
+    """Load users from users.json file"""
+    if os.path.exists(USERS_FILE):
+        with open(USERS_FILE, 'r') as f:
+            return json.load(f)
+    return []
+
+def change_user_password(username, new_password):
+    """Change the password for a user in users.json"""
+    if not os.path.exists(USERS_FILE):
+        return False, "No users.json file found."
+    with open(USERS_FILE, 'r') as f:
+        users = json.load(f)
+    for user in users:
+        if user['username'] == username:
+            user['password'] = hash_password(new_password)
+            with open(USERS_FILE, 'w') as f2:
+                json.dump(users, f2, indent=2)
+            return True, None
+    return False, "User not found."
+
+# ============================================================================
 # Password Hashing Utilities
 # ============================================================================
+    
 def hash_password(password):
     """Hash a password using bcrypt"""
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
