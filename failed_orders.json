@@ -11,24 +11,28 @@
     "resolved_timestamp": "2025-11-13T19:28:57.856771",
     "resolution_note": ""
   },
-  "UIA202511-037897": {
-    "orderref": "UIA202511-037897",
+  "UIA202511-038555": {
+    "orderref": "UIA202511-038555",
     "error_message": "Utopia API returned error - invalid orderref or API issue",
     "failure_type": "utopia_api_error",
-    "timestamp": "2025-11-13T19:27:22.078321",
-    "customer_data": {},
-    "retry_count": 3,
-    "resolved": false,
-    "first_failure": "2025-11-13T19:27:20.126392"
-  },
-  "UIA202511-038158": {
-    "orderref": "UIA202511-038158",
-    "error_message": "Error processing API callback: HTTPSConnectionPool(host='management.theglobal.net', port=444): Max retries exceeded with url: /api/1/index.php (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x0000024A05A20B90>, 'Connection to management.theglobal.net timed out. (connect timeout=None)'))",
-    "failure_type": "powercode_api_error",
-    "timestamp": "2025-11-17T12:51:27.214249",
+    "timestamp": "2025-11-17T14:46:05.791559",
     "customer_data": {},
     "retry_count": 0,
-    "resolved": false,
-    "first_failure": "2025-11-17T12:51:27.214249"
+    "resolved": true,
+    "first_failure": "2025-11-17T14:46:05.791559",
+    "resolved_timestamp": "2025-11-17T14:55:59.420590",
+    "resolution_note": "Cancel order"
+  },
+  "UIA202511-038570": {
+    "orderref": "UIA202511-038570",
+    "error_message": "Utopia API returned error - invalid orderref or API issue",
+    "failure_type": "utopia_api_error",
+    "timestamp": "2025-11-17T15:30:05.423786",
+    "customer_data": {},
+    "retry_count": 0,
+    "resolved": true,
+    "first_failure": "2025-11-17T15:30:05.423786",
+    "resolved_timestamp": "2025-11-17T16:00:22.261380",
+    "resolution_note": "Customer Cancel Order"
   }
 }

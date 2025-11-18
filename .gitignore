@@ -172,6 +172,9 @@ run_tests*
 TESTING.md
 test handle_new_order.py
 
+failed_orders.json
+
+ticket_descriptions/
 
 contracts/
 utopiaenv/
