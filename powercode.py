@@ -51,15 +51,15 @@ def create_powercode_account(customer_info, max_retries=3, retry_delay=5):
         print(f"Attempt #{attempt + 1} to create Powercode account.")
 
         try:
-            PC_response = requests.post(config.PC_URL_API, data=account_data, verify=PC_VERIFY_SSL)
+            response = requests.post(config.PC_URL_API, data=account_data, verify=PC_VERIFY_SSL)
             # print(PC_response.json())
 
-            if 'customerID' in PC_response.json():
+            if 'customerID' in response.json():
                 # Account created successfully
-                PC_customer_id = PC_response.json()['customerID']
-                print(f"Powercode account created successfully: {PC_response}")
+                PC_customer_id = response.json()['customerID']
+                print(f"Powercode account created successfully: {response}")
                 return PC_customer_id
-            elif PC_response.json().get('statusCode') == 23:
+            elif response.json().get('statusCode') == 23:
                 # Geocoding failed, retry with physicalAutomaticallyGeocode set to 0
                 # print("Geocoding failed. Retrying with physicalAutomaticallyGeocode set to 0.")
                 account_data["physicalAutomaticallyGeocode"] = 0
@@ -67,7 +67,7 @@ def create_powercode_account(customer_info, max_retries=3, retry_delay=5):
             else:
                 # Other error, stop retrying
                 # print(f"Failed to create Powercode account. Response: {PC_response.json()}")
-                error_message = PC_response.json().get('message', 'Unknown error in Powercode')
+                error_message = response.json().get('message', 'Unknown error in Powercode')
                 #utopia_handler.send_email("Failed to create Powercode account", f"Error message: {error_message}")
                 break
 
@@ -76,8 +76,11 @@ def create_powercode_account(customer_info, max_retries=3, retry_delay=5):
             time.sleep(retry_delay)
 
     print(f"Failed to create Powercode account after {max_retries} attempts.")
-    print(f"Powercode returned: {PC_response}")
-    return -1
+    
+    print("Status Code:", response.status_code)
+    print("Response Body:", response.text)
+
+    return -1, response.text
 
 
 def read_powercode_account(customerID):
