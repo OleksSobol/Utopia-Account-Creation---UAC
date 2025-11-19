@@ -12,7 +12,6 @@ def create_powercode_account(customer_info, max_retries=3, retry_delay=5):
     if customer_info['state'] == "Montana":
         customer_info['state'] = "MT"
 
-
     notes = (
         f"Order# {customer_info.get('orderref', '')}\n"
         f"Utopia SiteID: {customer_info.get('siteid', '')}\n"
@@ -37,7 +36,7 @@ def create_powercode_account(customer_info, max_retries=3, retry_delay=5):
         "dueByDays": 0,
         "gracePeriodDays": 10,
         "customerNotes": notes,
-        "customerPortalUsername": customer_info['email'],
+        "customerPortalUsername": customer_info['customerPortalUsername'],
         "customerPortalPassword": CUSTOMER_PORTAL_PASSWORD,
         "phone": json.dumps([
             {

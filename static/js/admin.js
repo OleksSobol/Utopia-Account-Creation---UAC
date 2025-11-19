@@ -140,7 +140,8 @@ function formatCustomerData(data, orderref) {
                     </div>
                     ` : ''}
 
-                    ${data.orderitems && data.orderitems.length > 0 ? `
+                    ${data.orderitems && data.orderitems.length > 0 ? `Confirm Submission to PowerCode
+
                     <div class="bg-white p-4 rounded-lg">
                         <div class="font-bold text-blue-600 mb-3 flex items-center">
                             <i class="fas fa-shopping-cart mr-2"></i>Order Items
@@ -296,7 +297,7 @@ function editPowerCodeData(orderref) {
     document.getElementById('edit-zip').value = address.zip || '';
     document.getElementById('edit-apt').value = address.apt || '';
     document.getElementById('edit-siteid').value = address.siteid || '';
-    
+    document.getElementById('edit-pc-portal-username').value = customer['pc-portal-username'] || customer.email || '';
     document.getElementById('editModal').classList.remove('hidden');
     document.getElementById('edit-firstname').focus();
 }
@@ -326,6 +327,7 @@ function saveEditedData() {
     rawData.address.zip = document.getElementById('edit-zip').value.trim();
     rawData.address.apt = document.getElementById('edit-apt').value.trim();
     rawData.address.siteid = document.getElementById('edit-siteid').value.trim();
+        rawData.customer['pc-portal-username'] = document.getElementById('edit-pc-portal-username').value.trim();
     
     currentCustomerData[currentEditingOrderref] = rawData;
     
@@ -358,66 +360,91 @@ function saveEditedData() {
 async function sendToPowerCode(orderref) {
     const rawData = currentCustomerData[orderref];
     const servicePlan = currentServicePlans[orderref] || '250 Mbps';
-    
     if (!rawData) {
         alert('No customer data found. Please search again.');
         return;
     }
-
+    // Build info string
     const c = rawData.customer || {};
-    if (!confirm(`Create customer in PowerCode?\n\nName: ${c.firstname || ''} ${c.lastname || ''}\nEmail: ${c.email || ''}\nService Plan: ${servicePlan}\n\nThis will create the customer account and send notifications.`)) {
-        return;
+    const a = rawData.address || {};
+    let infoHtml = `<div class="space-y-2">
+        <div><strong>Name:</strong> ${c.firstname || ''} ${c.lastname || ''}</div>
+        <div><strong>Email:</strong> ${c.email || ''}</div>
+        <div><strong>Phone:</strong> ${c.phone || ''}</div>
+        <div><strong>Service Plan:</strong> ${servicePlan}</div>
+        <div><strong>Address:</strong> ${a.address || ''}</div>
+        <div><strong>Apt/Unit:</strong> ${a.apt || ''}</div>
+        <div><strong>City:</strong> ${a.city || ''}</div>
+        <div><strong>State:</strong> ${a.state || ''}</div>
+        <div><strong>ZIP:</strong> ${a.zip || ''}</div>
+        <div><strong>Powercode Portal Username:</strong> ${c['pc-portal-username'] || c.email || ''}</div>
+        <div><strong>Site ID:</strong> ${a.siteid || ''}</div>
+    </div>`;
+    document.getElementById('confirmCustomerInfo').innerHTML = infoHtml;
+    // Show modal
+    document.getElementById('confirmModal').classList.remove('hidden');
+    // Confirm button handler
+    const confirmSendBtn = document.getElementById('confirmSendBtn');
+    const cancelConfirmModalBtn = document.getElementById('cancelConfirmModalBtn');
+    const closeConfirmModalBtn = document.getElementById('closeConfirmModalBtn');
+    function closeConfirmModal() {
+        document.getElementById('confirmModal').classList.add('hidden');
+        confirmSendBtn.removeEventListener('click', sendConfirmed);
+        cancelConfirmModalBtn.removeEventListener('click', closeConfirmModal);
+        closeConfirmModalBtn.removeEventListener('click', closeConfirmModal);
     }
-
-    addLogEntry(`Sending customer data to PowerCode for orderref: <strong>${orderref}</strong>...`, 'info');
-    updateStatus('Creating...', 'loading');
-
-    try {
-        const response = await fetch('/api/create-customer', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                orderref,
-                customer_data: rawData,
-                service_plan: servicePlan
-            })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            const successMsg = `
-                <div class="space-y-3">
-                    <div class="text-2xl font-bold text-green-600 flex items-center">
-                        <i class="fas fa-check-circle mr-2"></i>Customer Created Successfully!
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="bg-white p-3 rounded-lg">
-                            <strong>PowerCode ID:</strong> ${result.customer_id}
+    async function sendConfirmed() {
+        closeConfirmModal();
+        addLogEntry(`Sending customer data to PowerCode for orderref: <strong>${orderref}</strong>...`, 'info');
+        updateStatus('Creating...', 'loading');
+        try {
+            const response = await fetch('/api/create-customer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderref,
+                    customer_data: rawData,
+                    service_plan: servicePlan
+                })
+            });
+            const result = await response.json();
+            if (result.success) {
+                const successMsg = `
+                    <div class="space-y-3">
+                        <div class="text-2xl font-bold text-green-600 flex items-center">
+                            <i class="fas fa-check-circle mr-2"></i>Customer Created Successfully!
                         </div>
-                        <div class="bg-white p-3 rounded-lg">
-                            <strong>Service Plan:</strong> ${result.service_plan || 'N/A'}
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-white p-3 rounded-lg">
+                                <strong>PowerCode ID:</strong> ${result.customer_id}
+                            </div>
+                            <div class="bg-white p-3 rounded-lg">
+                                <strong>Service Plan:</strong> ${result.service_plan || 'N/A'}
+                            </div>
+                            <div class="bg-white p-3 rounded-lg">
+                                <strong>Ticket:</strong> ${result.ticket || 'Created'}
+                            </div>
                         </div>
-                        <div class="bg-white p-3 rounded-lg">
-                            <strong>Ticket:</strong> ${result.ticket || 'Created'}
+                        <div class="text-sm text-gray-600 mt-3">
+                            <i class="fas fa-envelope mr-2"></i>Email notification sent to admin.
                         </div>
                     </div>
-                    <div class="text-sm text-gray-600 mt-3">
-                        <i class="fas fa-envelope mr-2"></i>Email notification sent to admin.
-                    </div>
-                </div>
-            `;
-            addLogEntry(successMsg, 'success');
-            updateStatus('Success', 'success');
-        } else {
-            addLogEntry(`[ERROR] ${result.error}`, 'error');
-            updateStatus('Error', 'error');
+                `;
+                addLogEntry(successMsg, 'success');
+                updateStatus('Success', 'success');
+            } else {
+                addLogEntry(`[ERROR] ${result.error}`, 'error');
+                updateStatus('Error', 'error');
+            }
+        } catch (error) {
+            addLogEntry(`[ERROR] Failed to create customer: ${error.message}`, 'error');
+            updateStatus('Connection Error', 'error');
+            console.error('Create customer error:', error);
         }
-    } catch (error) {
-        addLogEntry(`[ERROR] Failed to create customer: ${error.message}`, 'error');
-        updateStatus('Connection Error', 'error');
-        console.error('Create customer error:', error);
     }
+    confirmSendBtn.addEventListener('click', sendConfirmed);
+    cancelConfirmModalBtn.addEventListener('click', closeConfirmModal);
+    closeConfirmModalBtn.addEventListener('click', closeConfirmModal);
 }
 
 // Modal event listeners

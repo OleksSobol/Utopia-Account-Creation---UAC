@@ -308,7 +308,7 @@ class UtopiaAPIHandler:
             orderref = data.get('orderref', '').strip()
             customer_data = data.get('customer_data', {})
             service_plan = data.get('service_plan', '250 Mbps')  # Get service plan from frontend
-            
+
             # Validate inputs
             if not orderref or not customer_data:
                 logger.warning("Admin create customer attempted without required data")
@@ -318,7 +318,7 @@ class UtopiaAPIHandler:
                 }), 400
             
             logger.info(f"Admin creating customer for orderref: {orderref} by user: {session.get('username')}")
-            logger.info(pretty_log_json(customer_data, "Customer data to create"))
+            # logger.info(pretty_log_json(customer_data, "Customer data to create"))
             
             # Extract customer info for processing
             customer_to_powercode = {
@@ -333,9 +333,12 @@ class UtopiaAPIHandler:
                 "zip": customer_data.get("address", {}).get("zip", ""),
                 "siteid": customer_data.get("address", {}).get("siteid", ""),
                 "orderref": orderref,
+                "pc-portal-username": customer_data.get("customer", {}).get("pc-portal-username",""),
                 "sp_terms_agree_date": customer_data.get('termsagreement', {}).get('sp_terms_agree_date', "")
             }
             
+            logger.warning(f"Customer data to create account in Powercode: {pretty_log_json(customer_to_powercode)}")
+
             # Use shared customer creation logic
             success, customer_id, error_message, ticket_id = self.process_customer_creation(
                 customer_to_powercode, orderref, service_plan
@@ -929,7 +932,10 @@ class UtopiaAPIHandler:
                 'success': False,
                 'error': f'Failed to download logs: {str(e)}'
             }), 500
-        
+
+    # ============================================================================
+    # MAIN CALLBACK FUNCTION
+    # ============================================================================
     def api_callback(self):
         """
         Handle incoming API callbacks from Utopia
@@ -995,54 +1001,27 @@ class UtopiaAPIHandler:
         3. Create new customer or send notification if exists
         """
         logger.info(f"Processing new order from webhook - orderref: {orderref}")
-
-        customer_from_utopia = Utopia.getCustomerFromUtopia(orderref)
         
+        customer_from_utopia, error_msg = self.fetch_customer_data_from_utopia(orderref)
+
         logger.info(pretty_log_json(customer_from_utopia, "Response from Utopia"))
 
-        # Check for error responses from Utopia API
-        if isinstance(customer_from_utopia, dict) and "error" in customer_from_utopia:
-            utopia_error_msg = customer_from_utopia.get("error", "Unknown error")
-            error_msg = f"Utopia API error for order {orderref}: {utopia_error_msg}"
+        if error_msg:
             logger.error(error_msg)
-            
-            # Record failure in tracking system with specific Utopia error
-            self.failure_tracker.record_failure(
-                orderref=orderref,
-                error_message=f"Utopia API error: {utopia_error_msg}",
-                failure_type="utopia_api_error"
-            )
-            
-            # Only send email if it's not the "No valid records found for this ISP" error
-            if "No valid records found for this ISP" not in utopia_error_msg:
-                # Send email with specific Utopia error message
-                self.send_email(
-                    f"Utopia API Error - Order {orderref}",
-                    f"Failed to fetch customer data from Utopia API\n\n"
-                    f"Order Reference: {orderref}\n"
-                    f"Error Message: {utopia_error_msg}\n\n",
-                    orderref
-                )
-            else:
-                logger.info(f"Skipping email notification for 'No valid records' error - orderref: {orderref}")
-            
             return
-        
-        # Transform Utopia data to PowerCode format
+
         customer_to_powercode = self.customer_to_pc(customer_from_utopia, orderref)
-        
-        # Extract customer info for duplicate check
+
         firstname = customer_from_utopia.get("customer", {}).get("firstname", "")
         lastname = customer_from_utopia.get("customer", {}).get("lastname", "")
         utopia_city = customer_from_utopia.get("address", {}).get("city", "")
         utopia_address = customer_from_utopia.get("address", {}).get("address", "")
-
-        # Check if customer already exists
+        
         logger.info("Checking for existing customer in PowerCode...")
+        
         exists, matching_customer = self.check_customer_exists(firstname, lastname, utopia_city, utopia_address)
 
         if exists:
-            # Customer exists - send notification
             pc_customer_id = matching_customer.get('CustomerID')
             logger.info(f"Customer already exists in PowerCode - Customer ID: {pc_customer_id}")
             formatted_customer_info = self.format_contact_info(customer_to_powercode)
@@ -1054,8 +1033,36 @@ class UtopiaAPIHandler:
                 orderref,
             )
         else:
-            # Create new customer using shared logic
             self.handle_webhook_customer_creation(customer_from_utopia, orderref)
+
+    def fetch_customer_data_from_utopia(self, orderref):
+        """
+        Fetch customer data from Utopia API and handle errors.
+        Returns (customer_data, error_message)
+        """
+        customer_data = Utopia.getCustomerFromUtopia(orderref)
+        if isinstance(customer_data, dict) and "error" in customer_data:
+            utopia_error_msg = customer_data.get("error", "Unknown error")
+            error_msg = f"Utopia API error for order {orderref}: {utopia_error_msg}"
+            self.failure_tracker.record_failure(
+                orderref=orderref,
+                error_message=f"Utopia API error: {utopia_error_msg}",
+                failure_type="utopia_api_error"
+            )
+            if "No valid records found for this ISP" not in utopia_error_msg:
+                self.send_email(
+                    f"Utopia API Error - Order {orderref}",
+                    f"Failed to fetch customer data from Utopia API\n\n"
+                    f"Order Reference: {orderref}\n"
+                    f"Error Message: {utopia_error_msg}\n\n",
+                    orderref
+                )
+            else:
+                logger.info(f"Skipping email notification for 'No valid records' error - orderref: {orderref}")
+            return None, error_msg
+        return customer_data, None
+
+    
 
     def handle_webhook_customer_creation(self, customer_from_utopia, orderref):
         """
@@ -1149,6 +1156,7 @@ class UtopiaAPIHandler:
             
             
             # Send Success Email
+            customer_full_name = f"{customer_data.get('firstname', '')} {customer_data.get('lastname', '')}".strip()
             formatted_customer_info = self.format_contact_info(customer_data)
             self.send_email(
                 f"Customer Created Successfully - {customer_full_name} (PC#{customer_id})",
@@ -1339,6 +1347,7 @@ class UtopiaAPIHandler:
             "lastname": customer_from_utopia.get("customer", {}).get("lastname", ""),
             "email": customer_from_utopia.get("customer", {}).get("email", ""),
             "phone": customer_from_utopia.get("customer", {}).get("phone", ""),
+            "customerPortalUsername": customer_from_utopia.get("customer", {}).get("email", ""),
             "address": customer_from_utopia.get("address", {}).get("address", ""),
             "city": customer_from_utopia.get("address", {}).get("city", ""),
             "apt": customer_from_utopia.get("address", {}).get("apt", ""),
@@ -1360,6 +1369,7 @@ class UtopiaAPIHandler:
             f"Name: {safe(contact_info.get('firstname'))} {safe(contact_info.get('lastname'))}\n"
             f"Email: {safe(contact_info.get('email'))}\n"
             f"Phone: {safe(contact_info.get('phone'))}\n"
+            f"Customer Portal Username: {safe(contact_info.get('customerPortalUsername'))}\n"
             f"Address: {safe(contact_info.get('address'))}\n"
             f"City: {safe(contact_info.get('city'))}\n"
             f"State: {safe(contact_info.get('state'))}\n"
