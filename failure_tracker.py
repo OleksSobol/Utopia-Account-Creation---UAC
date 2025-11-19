@@ -10,8 +10,9 @@ This module handles:
 import json
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +101,7 @@ class FailureTracker:
             "orderref": orderref,
             "error_message": error_message,
             "failure_type": failure_type,
-            "timestamp": datetime.now().astimezone().isoformat(),
+            "timestamp": datetime.now(timezone.utc).astimezone().isoformat(),
             "customer_data": customer_data or {},
             "retry_count": 0,
             "resolved": False
@@ -192,7 +193,7 @@ class FailureTracker:
         
         if orderref in failures:
             failures[orderref]["resolved"] = True
-            failures[orderref]["resolved_timestamp"] = datetime.now().astimezone().isoformat()
+            failures[orderref]["resolved_timestamp"] =datetime.now(timezone.utc).astimezone().isoformat()
             failures[orderref]["resolution_note"] = resolution_note
             self._save_failures(failures)
             logger.info(f"Marked failure as resolved for orderref: {orderref}")
