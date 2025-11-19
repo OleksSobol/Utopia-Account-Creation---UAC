@@ -20,7 +20,9 @@ class PcApiKeyAuth(AuthBase):
         r.headers["Authorization"] = f"Basic {self.encoded_key}"
         return r
 
-
+#===========================================
+# Customers methods 
+#===========================================
 def create_powercode_account(customer_info, max_retries=3, retry_delay=5):
     if customer_info['state'] == "Montana":
         customer_info['state'] = "MT"
@@ -130,7 +132,9 @@ def search_powercode_customers(searchString):
     return PC_response.json()
 
 
-### Tickets ###
+#===========================================
+# Tickets 
+#===========================================
 def create_powercode_ticket(customer_id, description):
 
     # print(customer_id)
@@ -197,18 +201,18 @@ def add_customer_service_plan(customer_id, service_plan_id):
 
     return pc_response.json()
 
-#
-# 
-#
+#===========================================
+# TAGS 
+#===========================================
 
 def get_customer_tags(customer_id):
     """
     Get tags for a specific customer
     """
-    path = "uapi/customer/tags/customer"
+    path = "customer/tags/customer"
     
     url = f"{config.PC_URL_UAPI}/{path}"
-
+    
     params = {
         "customerID": customer_id
     }
@@ -230,7 +234,7 @@ def add_customer_tag(customer_id, tags_id_list):
     """
     Add a tags to a customer
     """
-    path = "uapi/customer/tags/customer"
+    path = "customer/tags/customer"
     url = f"{config.PC_URL_UAPI}/{path}"
 
     params = {
@@ -254,7 +258,7 @@ def delete_customer_tag(customer_id, tags_id):
     """
     Add a tags to a customer
     """
-    path = "uapi/customer/tags/customer"
+    path = "customer/tags/customer"
     url = f"{config.PC_URL_UAPI}/{path}"
 
     params = {
