@@ -1124,11 +1124,11 @@ class UtopiaAPIHandler:
         try:
             # Create customer in PowerCode
             logger.info(f"Creating PowerCode account for orderref={orderref}")
-            customer_id = PowerCode.create_powercode_account(customer_data)
+            customer_id, pc_response_text = PowerCode.create_powercode_account(customer_data)
             
             if customer_id == -1:
-                error_msg = 'Failed to create customer in PowerCode. Check server logs for details.'
-                logger.error(f"PowerCode returned -1 for customer creation. Orderref: {orderref}")
+                error_msg = f'Failed to create customer in PowerCode. Check server logs for details. PC response {pc_response_text}'
+                logger.error(f"PowerCode returned -1 for customer creation with response: {pc_response_text}. Orderref: {orderref}")
                 return False, -1, error_msg, None
             
             # Add service plans
