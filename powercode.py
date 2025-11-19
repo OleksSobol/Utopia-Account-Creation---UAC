@@ -115,21 +115,7 @@ def search_powercode_customers(searchString):
 
 
 ### Tickets ###
-def create_powercode_ticket(customer_id, customer_name=""):
-    
-    # Path to the folder and the description file
-    folder_path = 'ticket_descriptions'
-    description_file = os.path.join(folder_path, 'new_desc.txt')
-
-    # Create the folder if it doesn't exist
-    os.makedirs(folder_path, exist_ok=True)
-
-    # Read the description from the text file
-    with open(description_file, 'r') as file:
-        new_desc = file.read()
-
-    # Replace placeholders with dynamic values
-    new_desc = new_desc.replace("{customer_name}", customer_name)
+def create_powercode_ticket(customer_id, description):
 
     # print(customer_id)
     ticket_data = {
@@ -139,7 +125,7 @@ def create_powercode_ticket(customer_id, customer_name=""):
         "summary": "BZN - Customer has requested Global Net Fiber Service",
         "category": 54,
         "ticketType": 21,
-        "description": new_desc,
+        "description": description,
         "status": 1,
         "responsibleUser": "Sales",
         "responsibleGroupID": 4,

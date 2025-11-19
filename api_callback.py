@@ -1140,7 +1140,6 @@ class UtopiaAPIHandler:
             ticket_description = self.get_ticket_description(customer_data)
             ticket_id = PowerCode.create_powercode_ticket(
                 customer_id, 
-                customer_data.get("firstname", ""),
                 description=ticket_description 
             ) 
 
@@ -1301,14 +1300,14 @@ class UtopiaAPIHandler:
             # Replace variables with actual customer data
             description = template.replace('{customer_name}', 
                                         f"{customer_data.get('firstname', '')} {customer_data.get('lastname', '')}".strip())
-            description = description.replace('{order_ref}', customer_data.get('orderref', 'N/A'))
-            description = description.replace('{site_id}', customer_data.get('siteid', 'N/A'))
-            description = description.replace('{email}', customer_data.get('email', 'N/A'))
-            description = description.replace('{phone}', customer_data.get('phone', 'N/A'))
-            description = description.replace('{address}', customer_data.get('address', 'N/A'))
-            description = description.replace('{city}', customer_data.get('city', 'N/A'))
-            description = description.replace('{state}', customer_data.get('state', 'N/A'))
-            description = description.replace('{zip}', customer_data.get('zip', 'N/A'))
+            # description = description.replace('{order_ref}', customer_data.get('orderref', 'N/A'))
+            # description = description.replace('{site_id}', customer_data.get('siteid', 'N/A'))
+            # description = description.replace('{email}', customer_data.get('email', 'N/A'))
+            # description = description.replace('{phone}', customer_data.get('phone', 'N/A'))
+            # description = description.replace('{address}', customer_data.get('address', 'N/A'))
+            # description = description.replace('{city}', customer_data.get('city', 'N/A'))
+            # description = description.replace('{state}', customer_data.get('state', 'N/A'))
+            # description = description.replace('{zip}', customer_data.get('zip', 'N/A'))
         
             return description
         
