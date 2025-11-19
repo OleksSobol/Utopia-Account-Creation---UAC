@@ -1266,19 +1266,19 @@ class UtopiaAPIHandler:
         Add tags to a customer using PowerCode UAPI.
         Returns (success: bool, tags: list)
         """
-        tags_str = ','.join(str(tag) for tag in tags_id)
-        response = PowerCode.add_customer_tag(customer_id, tags_str)
-        try:
-            result = json.loads(response)
-        except Exception as e:
-            logger.error(f"Failed to parse tag response for customer {customer_id}: {response}", exc_info=True)
-            return False, []
+        for tag in tags_id:
+            response = PowerCode.add_customer_tag(customer_id, tag)
+            try:
+                result = json.loads(response)
+            except Exception as e:
+                logger.error(f"Failed to parse tag response for customer {customer_id}: {response}", exc_info=True)
+                return False, []
 
-        if result.get("Success"):
-            return True, result.get("Response", [])
-        else:
-            logger.error(f"Failed to add tags {tags_id} for customer {customer_id}: {result}")
-            return False, []
+            if result.get("Success"):
+                return True, result.get("Response", [])
+            else:
+                logger.error(f"Failed to add tags {tags_id} for customer {customer_id}: {result}")
+                return False, []
 
 
     def get_ticket_description(self, customer_data):

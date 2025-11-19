@@ -2,11 +2,24 @@
 import os
 import json
 import time
+import base64
 import config
 import requests
 
-from requests.auth import HTTPBasicAuth
+from requests.auth import HTTPBasicAuth, AuthBase
 from config import PC_VERIFY_SSL, CUSTOMER_PORTAL_PASSWORD
+
+
+
+# Small implementation of API key only authentication
+class PcApiKeyAuth(AuthBase):
+    def __init__(self, key: str):
+        self.encoded_key = base64.b64encode(key.encode()).decode()
+
+    def __call__(self, r: requests.PreparedRequest):
+        r.headers["Authorization"] = f"Basic {self.encoded_key}"
+        return r
+
 
 def create_powercode_account(customer_info, max_retries=3, retry_delay=5):
     if customer_info['state'] == "Montana":
@@ -192,15 +205,24 @@ def get_customer_tags(customer_id):
     """
     Get tags for a specific customer
     """
-    payload = {} # Required by UAPI
-    headers = {} # Required by UAPI
-
-    endpoint = f"customer/tags/customer?customerID={customer_id}"
-
-    full_url = config.PC_URL_UAPI + endpoint
+    path = "uapi/customer/tags/customer"
     
-    response = requests.request("GET", full_url, headers=headers, data=payload, 
-                               auth=HTTPBasicAuth(config.PC_UAPI_USERNAME, config.PC_UAPI_PASSWORD), verify=PC_VERIFY_SSL)
+    url = f"{config.PC_URL_UAPI}/{path}"
+
+    params = {
+        "customerID": customer_id
+    }
+
+    response = requests.get(
+        url,
+        params = params,
+        auth = PcApiKeyAuth(config.PC_API_KEY),
+        allow_redirects = True,
+    )
+
+    print("Status Code:", response.status_code)
+    print("Response Body:", response.text)
+
     return response.text
 
 # {"Success":true,"Response":[{"TagID":5,"TagName":"Bridged Handoff"},{"TagID":9,"TagName":"Yellowstone Fiber Customer"}]}
@@ -208,29 +230,48 @@ def add_customer_tag(customer_id, tags_id_list):
     """
     Add a tags to a customer
     """
-    payload = {} # Required by UAPI
-    headers = {} # Required by UAPI
+    path = "uapi/customer/tags/customer"
+    url = f"{config.PC_URL_UAPI}/{path}"
 
-    endpoint = f"customer/tags/customer?customerID={customer_id}&tags[]={tags_id_list}"
-    full_url = config.PC_URL_UAPI + endpoint
-    
-    response = requests.request("POST", full_url, headers=headers, data=payload, 
-                               auth=HTTPBasicAuth(config.PC_UAPI_USERNAME, config.PC_UAPI_PASSWORD), verify=PC_VERIFY_SSL)
+    params = {
+        "customerID": customer_id,
+        "tags[]": tags_id_list
+    }
+
+    response = requests.post(
+        url,
+        params = params,
+        auth = PcApiKeyAuth(config.PC_API_KEY),
+        allow_redirects = True,
+    )
+
+    print("Status Code:", response.status_code)
+    print("Response Body:", response.text)
+
     return response.text
 
 def delete_customer_tag(customer_id, tags_id):
     """
     Add a tags to a customer
     """
-    payload = {} # Required by UAPI
-    headers = {} # Required by UAPI
+    path = "uapi/customer/tags/customer"
+    url = f"{config.PC_URL_UAPI}/{path}"
 
-    endpoint = f"customer/tags/customer?customerID={customer_id}&tags[]={tags_id}"
+    params = {
+        "customerID": customer_id,
+        "tags[]": tags_id
+    }
 
-    full_url = config.PC_URL_UAPI + endpoint
-    
-    response = requests.request("DELETE", full_url, headers=headers, data=payload, 
-                               auth=HTTPBasicAuth(config.PC_UAPI_USERNAME, config.PC_UAPI_PASSWORD), verify=PC_VERIFY_SSL)
+    response = requests.delete(
+        url,
+        params = params,
+        auth = PcApiKeyAuth(config.PC_API_KEY),
+        allow_redirects = True,
+    )
+
+    print("Status Code:", response.status_code)
+    print("Response Body:", response.text)
+
     return response.text
 
     
