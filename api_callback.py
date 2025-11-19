@@ -333,7 +333,7 @@ class UtopiaAPIHandler:
                 "zip": customer_data.get("address", {}).get("zip", ""),
                 "siteid": customer_data.get("address", {}).get("siteid", ""),
                 "orderref": orderref,
-                "pc-portal-username": customer_data.get("customer", {}).get("pc-portal-username",""),
+                "customerPortalUsername": customer_data.get("customer", {}).get("pc-portal-username",""),
                 "sp_terms_agree_date": customer_data.get('termsagreement', {}).get('sp_terms_agree_date', "")
             }
             
