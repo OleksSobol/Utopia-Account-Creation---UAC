@@ -210,7 +210,6 @@ def get_customer_tags(customer_id):
     Get tags for a specific customer
     """
     path = "customer/tags/customer"
-    
     url = f"{config.PC_URL_UAPI}/{path}"
     
     params = {
@@ -224,8 +223,8 @@ def get_customer_tags(customer_id):
         allow_redirects = True,
     )
 
-    print("Status Code:", response.status_code)
-    print("Response Body:", response.text)
+    # print("Status Code:", response.status_code)
+    # print("Response Body:", response.text)
 
     return response.text
 
@@ -249,9 +248,6 @@ def add_customer_tag(customer_id, tags_id_list):
         allow_redirects = True,
     )
 
-    print("Status Code:", response.status_code)
-    print("Response Body:", response.text)
-
     return response.text
 
 def delete_customer_tag(customer_id, tags_id):
@@ -272,9 +268,6 @@ def delete_customer_tag(customer_id, tags_id):
         auth = PcApiKeyAuth(config.PC_API_KEY),
         allow_redirects = True,
     )
-
-    print("Status Code:", response.status_code)
-    print("Response Body:", response.text)
 
     return response.text
 
