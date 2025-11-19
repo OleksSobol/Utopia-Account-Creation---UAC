@@ -100,7 +100,7 @@ class FailureTracker:
             "orderref": orderref,
             "error_message": error_message,
             "failure_type": failure_type,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": datetime.now().astimezone().isoformat(),
             "customer_data": customer_data or {},
             "retry_count": 0,
             "resolved": False
@@ -192,7 +192,7 @@ class FailureTracker:
         
         if orderref in failures:
             failures[orderref]["resolved"] = True
-            failures[orderref]["resolved_timestamp"] = datetime.now().isoformat()
+            failures[orderref]["resolved_timestamp"] = datetime.now().astimezone().isoformat()
             failures[orderref]["resolution_note"] = resolution_note
             self._save_failures(failures)
             logger.info(f"Marked failure as resolved for orderref: {orderref}")
