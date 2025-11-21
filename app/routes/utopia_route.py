@@ -1,8 +1,14 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-import utopia  # Import your Utopia API methods
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+import utopia 
 import json
 
 utopia_bp = Blueprint('utopia', __name__, template_folder='templates')
+
+@utopia_bp.before_request
+def require_login():
+    """Protect all routes in this blueprint"""
+    if 'logged_in' not in session:
+        return redirect(url_for('login'))
 
 @utopia_bp.route('/admin/utopia')
 def utopia_panel():

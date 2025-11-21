@@ -1,8 +1,14 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-import powercode  # Import your API methods
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
+import powercode 
 import json
 
 powercode_bp = Blueprint('powercode', __name__, template_folder='templates')
+
+@powercode_bp.before_request
+def require_login():
+    """Protect all routes in this blueprint"""
+    if 'logged_in' not in session:
+        return redirect(url_for('login'))
 
 @powercode_bp.route('/admin/powercode')
 def powercode_panel():
