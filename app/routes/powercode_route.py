@@ -58,6 +58,22 @@ def search_customers():
         flash(str(result))
     return redirect(url_for('powercode.powercode_panel'))
 
+# search customer with new UAPI
+@powercode_bp.route('/admin/powercode/search_customers_by_uapi', methods=['POST'])
+def search_customers_by_uapi():
+    search_string = request.form.get('searchString_by_uapi')
+    result = powercode.search_customers_with_uapi(search_string)
+    try:
+        # If result is already a dict
+        if isinstance(result, dict):
+            formatted = json.dumps(result, indent=2)
+        else:
+            formatted = json.dumps(result.json(), indent=2)
+        flash(formatted)
+    except:
+        flash(str(result))
+    return redirect(url_for('powercode.powercode_panel'))
+
 @powercode_bp.route('/admin/powercode/create_ticket', methods=['POST'])
 def create_ticket():
     customer_id = request.form.get('customer_id')

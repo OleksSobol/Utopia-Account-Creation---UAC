@@ -132,6 +132,31 @@ def search_powercode_customers(searchString):
     return PC_response.json()
 
 
+# Search customer with UAPI
+def search_customers_with_uapi(searchString):
+    """
+    search by name/phone
+    """
+
+    path = "customer/tags/customer/Find"
+    url = f"{config.PC_URL_UAPI}/{path}"
+
+    params = {
+        "query": searchString,
+    }
+
+    response = requests.post(
+        url,
+        params = params,
+        auth = PcApiKeyAuth(config.PC_API_KEY),
+        allow_redirects = True,
+    )
+
+    return response.json()
+
+
+
+
 #===========================================
 # Tickets 
 #===========================================
