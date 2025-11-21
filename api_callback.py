@@ -18,6 +18,11 @@ from flask import Flask, request, jsonify, render_template, session, redirect, u
 from functools import wraps
 from datetime import timedelta, datetime
 
+# Blueprints import
+from app.services.powercode_bp import powercode_bp
+from app.services.utopia_bp import utopia_bp
+
+
 
 # Only disable specific warnings, not all
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -68,6 +73,10 @@ class UtopiaAPIHandler:
         
         # Initialize failure tracker
         self.failure_tracker = FailureTracker()
+
+        # Setup Blueprints
+        self.app.register_blueprint(powercode_bp)
+        self.app.register_blueprint(utopia_bp)
         
         # Setup all routes
         self.setup_routes()

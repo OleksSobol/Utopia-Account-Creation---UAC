@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}Powercode Panel - Utopia Customer Lookup{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- Welcome Banner -->
+    <div class="gradient-bg rounded-2xl shadow-xl p-8 mb-8 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-3xl font-bold mb-2">
+                    <i class="fas fa-cog mr-3"></i>Powercode Panel
+                </h2>
+                <p class="text-blue-100">Manage customer accounts, tickets, service plans, and tags</p>
+            </div>
+            <div class="hidden md:block">
+                <i class="fas fa-tools text-6xl opacity-20"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="mb-8 space-y-2">
+          {% for message in messages %}
+            <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <span>{{ message }}</span>
+                </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Create Account -->
+    <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 hover-lift">
+        <h3 class="text-2xl font-bold text-gray-800 mb-6">
+            <i class="fas fa-user-plus mr-2 text-blue-600"></i>Create Account
+        </h3>
+        <form method="post" action="{{ url_for('powercode.create_account') }}" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
+                    <input name="firstname" placeholder="First Name" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
+                    <input name="lastname" placeholder="Last Name" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                <input name="email" placeholder="Email" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Address</label>
+                <input name="address" placeholder="Address" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">City</label>
+                    <input name="city" placeholder="City" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">State</label>
+                    <input name="state" placeholder="State" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Zip</label>
+                    <input name="zip" placeholder="Zip" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Phone</label>
+                <input name="phone" placeholder="Phone" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Portal Username</label>
+                <input name="customerPortalUsername" placeholder="Portal Username" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Site ID</label>
+                    <input name="siteid" placeholder="Site ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Order Ref</label>
+                    <input name="orderref" placeholder="Order Ref" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Terms Agree Date</label>
+                <input name="sp_terms_agree_date" placeholder="Terms Agree Date" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            </div>
+            <button type="submit" class="gradient-bg hover:shadow-lg text-white font-semibold px-8 py-3 rounded-lg flex items-center">
+                <i class="fas fa-user-plus mr-2"></i>Create Account
+            </button>
+        </form>
+    </div>
+
+    <!-- Read Account & Get Customer by External ID -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-user mr-2 text-blue-600"></i>Read Account
+            </h3>
+            <form method="post" action="{{ url_for('powercode.read_account') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Customer ID</label>
+                    <input name="customerID" placeholder="Customer ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-search mr-2"></i>Read Account
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-id-card mr-2 text-blue-600"></i>Get Customer by External ID
+            </h3>
+            <form method="post" action="{{ url_for('powercode.get_customer_by_external_id') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">External ID</label>
+                    <input name="external_id" placeholder="External ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-search mr-2"></i>Get Customer
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Search Customers -->
+    <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 hover-lift">
+        <h3 class="text-2xl font-bold text-gray-800 mb-6">
+            <i class="fas fa-search mr-2 text-blue-600"></i>Search Customers
+        </h3>
+        <form method="post" action="{{ url_for('powercode.search_customers') }}" class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Search String</label>
+                <input name="searchString" placeholder="Search String" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            </div>
+            <button type="submit" class="gradient-bg hover:shadow-lg text-white font-semibold px-8 py-3 rounded-lg flex items-center">
+                <i class="fas fa-search mr-2"></i>Search
+            </button>
+        </form>
+    </div>
+
+    <!-- Ticket Management -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-ticket-alt mr-2 text-blue-600"></i>Create Ticket
+            </h3>
+            <form method="post" action="{{ url_for('powercode.create_ticket') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Customer ID</label>
+                    <input name="customer_id" placeholder="Customer ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+                    <input name="description" placeholder="Description" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-plus mr-2"></i>Create Ticket
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-file-alt mr-2 text-blue-600"></i>Read Ticket
+            </h3>
+            <form method="post" action="{{ url_for('powercode.read_ticket') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Ticket ID</label>
+                    <input name="ticket_id" placeholder="Ticket ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-search mr-2"></i>Read Ticket
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Service Plan -->
+    <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 hover-lift">
+        <h3 class="text-2xl font-bold text-gray-800 mb-6">
+            <i class="fas fa-layer-group mr-2 text-blue-600"></i>Add Service Plan
+        </h3>
+        <form method="post" action="{{ url_for('powercode.add_service_plan') }}" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Customer ID</label>
+                    <input name="customer_id" placeholder="Customer ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Service Plan ID</label>
+                    <input name="service_plan_id" placeholder="Service Plan ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+            </div>
+            <button type="submit" class="gradient-bg hover:shadow-lg text-white font-semibold px-8 py-3 rounded-lg flex items-center">
+                <i class="fas fa-plus mr-2"></i>Add Service Plan
+            </button>
+        </form>
+    </div>
+
+    <!-- Tag Management -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-tags mr-2 text-blue-600"></i>Get Tags
+            </h3>
+            <form method="post" action="{{ url_for('powercode.get_customer_tags') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Customer ID</label>
+                    <input name="customer_id" placeholder="Customer ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-search mr-2"></i>Get Tags
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-tag mr-2 text-blue-600"></i>Add Tag
+            </h3>
+            <form method="post" action="{{ url_for('powercode.add_customer_tag') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Customer ID</label>
+                    <input name="customer_id" placeholder="Customer ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Tag IDs</label>
+                    <input name="tags_id_list" placeholder="Tag IDs (comma separated)" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-plus mr-2"></i>Add Tag
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-trash-alt mr-2 text-blue-600"></i>Delete Tag
+            </h3>
+            <form method="post" action="{{ url_for('powercode.delete_customer_tag') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Customer ID</label>
+                    <input name="customer_id" placeholder="Customer ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Tag ID</label>
+                    <input name="tags_id" placeholder="Tag ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-trash-alt mr-2"></i>Delete Tag
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Read Custom Action -->
+    <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+        <h3 class="text-2xl font-bold text-gray-800 mb-6">
+            <i class="fas fa-bolt mr-2 text-blue-600"></i>Read Custom Action
+        </h3>
+        <form method="post" action="{{ url_for('powercode.read_custom_action') }}" class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Action</label>
+                <input name="action" placeholder="Action" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            </div>
+            <button type="submit" class="gradient-bg hover:shadow-lg text-white font-semibold px-8 py-3 rounded-lg flex items-center">
+                <i class="fas fa-play mr-2"></i>Run Action
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
