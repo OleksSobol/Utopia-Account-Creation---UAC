@@ -25,7 +25,7 @@ from app.routes.utopia_route import utopia_bp
 
 
 # Only disable specific warnings, not all
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+# urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Configure logging
 # Application logs go to app_main.log only
