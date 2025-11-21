@@ -22,8 +22,6 @@ from datetime import timedelta, datetime
 from app.routes.powercode_route import powercode_bp
 from app.routes.utopia_route import utopia_bp
 
-
-
 # Only disable specific warnings, not all
 # urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 

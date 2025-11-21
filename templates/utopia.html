@@ -42,11 +42,11 @@
       {% endif %}
     {% endwith %}
 
-    <!-- Get Customer & Get MAC Address -->
+    <!-- Contract & Customer Lookup -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
             <h3 class="text-2xl font-bold text-gray-800 mb-6">
-                <i class="fas fa-user-circle mr-2 text-blue-600"></i>Get Customer
+                <i class="fas fa-file-contract mr-2 text-blue-600"></i>Contract Lookup
             </h3>
             <form method="post" action="{{ url_for('utopia.get_customer') }}" class="space-y-4">
                 <div>
@@ -61,6 +61,24 @@
 
         <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
             <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-user mr-2 text-blue-600"></i>Customer Lookup by CID
+            </h3>
+            <form method="post" action="{{ url_for('utopia.get_customer_by_cid') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Customer ID</label>
+                    <input name="cid" placeholder="Customer ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-search mr-2"></i>Get Customer
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAC & Service Lookup -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
                 <i class="fas fa-ethernet mr-2 text-blue-600"></i>Get MAC Address
             </h3>
             <form method="post" action="{{ url_for('utopia.get_mac') }}" class="space-y-4">
@@ -73,43 +91,252 @@
                 </button>
             </form>
         </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-signal mr-2 text-blue-600"></i>Service Lookup
+            </h3>
+            <form method="post" action="{{ url_for('utopia.get_service') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Site ID</label>
+                    <input name="siteid" placeholder="Site ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-search mr-2"></i>Get Service
+                </button>
+            </form>
+        </div>
     </div>
 
-    <!-- Get Service Info -->
-    <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 hover-lift">
-        <h3 class="text-2xl font-bold text-gray-800 mb-6">
-            <i class="fas fa-signal mr-2 text-blue-600"></i>Get Service Info
-        </h3>
-        <form method="post" action="{{ url_for('utopia.get_service') }}" class="space-y-4">
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Site ID</label>
-                <input name="siteid" placeholder="Site ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
-            </div>
-            <button type="submit" class="gradient-bg hover:shadow-lg text-white font-semibold px-8 py-3 rounded-lg flex items-center">
-                <i class="fas fa-search mr-2"></i>Get Service
-            </button>
-        </form>
+    <!-- SiteID by MAC & Check Access -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-search-location mr-2 text-blue-600"></i>Get SiteID by MAC
+            </h3>
+            <form method="post" action="{{ url_for('utopia.get_siteid_by_mac') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">MAC Address</label>
+                    <input name="mac" placeholder="MAC Address" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-search mr-2"></i>Get SiteID
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-shield-alt mr-2 text-blue-600"></i>Check Access
+            </h3>
+            <form method="post" action="{{ url_for('utopia.check_access') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Site ID (optional)</label>
+                    <input name="siteid" placeholder="Site ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-check mr-2"></i>Check Access
+                </button>
+            </form>
+        </div>
     </div>
 
-    <!-- Print Customer Info -->
-    <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
-        <h3 class="text-2xl font-bold text-gray-800 mb-6">
-            <i class="fas fa-print mr-2 text-blue-600"></i>Print Customer Info <span class="text-sm text-gray-500 font-normal">(demo)</span>
-        </h3>
-        <form method="post" action="{{ url_for('utopia.print_customer_info') }}" class="space-y-4">
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Customer JSON</label>
-                <textarea 
-                    name="customer_json" 
-                    placeholder="Paste customer JSON here" 
-                    rows="8"
-                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono text-sm"
-                ></textarea>
-            </div>
-            <button type="submit" class="gradient-bg hover:shadow-lg text-white font-semibold px-8 py-3 rounded-lg flex items-center">
-                <i class="fas fa-print mr-2"></i>Print Info
-            </button>
-        </form>
+    <!-- Order & Project Lookup -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-shopping-cart mr-2 text-blue-600"></i>Order Lookup
+            </h3>
+            <form method="post" action="{{ url_for('utopia.get_orders') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Site ID</label>
+                    <input name="siteid" placeholder="Site ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-search mr-2"></i>Get Orders
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-project-diagram mr-2 text-blue-600"></i>Project Lookup
+            </h3>
+            <form method="post" action="{{ url_for('utopia.get_projects') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Site ID</label>
+                    <input name="siteid" placeholder="Site ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-search mr-2"></i>Get Projects
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Project Details & ISP Products -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-tasks mr-2 text-blue-600"></i>Project Details
+            </h3>
+            <form method="post" action="{{ url_for('utopia.get_project_details') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Project ID</label>
+                    <input name="projectid" placeholder="Project ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-search mr-2"></i>Get Details
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-box mr-2 text-blue-600"></i>ISP Products
+            </h3>
+            <form method="post" action="{{ url_for('utopia.get_isp_products') }}" class="space-y-4">
+                <p class="text-sm text-gray-600 mb-4">Get all available ISP products</p>
+                <button type="submit" class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-list mr-2"></i>Get Products
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Suspend & Unsuspend Service -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-pause-circle mr-2 text-orange-600"></i>Suspend Service
+            </h3>
+            <form method="post" action="{{ url_for('utopia.suspend_service') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Customer ID</label>
+                    <input name="cid" placeholder="Customer ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Site ID</label>
+                    <input name="siteid" placeholder="Site ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-pause mr-2"></i>Suspend Service
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-play-circle mr-2 text-green-600"></i>Unsuspend Service
+            </h3>
+            <form method="post" action="{{ url_for('utopia.unsuspend_service') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Customer ID</label>
+                    <input name="cid" placeholder="Customer ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Site ID</label>
+                    <input name="siteid" placeholder="Site ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-play mr-2"></i>Unsuspend Service
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Change Speed & Cancel Service -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-tachometer-alt mr-2 text-blue-600"></i>Change Speed
+            </h3>
+            <form method="post" action="{{ url_for('utopia.change_speed') }}" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Customer ID</label>
+                        <input name="cid" placeholder="Customer ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Site ID</label>
+                        <input name="siteid" placeholder="Site ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Service ID</label>
+                        <input name="uiaid" placeholder="Service ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Product ID</label>
+                        <input name="product" placeholder="Product ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Issue Date (YYYY-MM-DD)</label>
+                    <input name="issuedate" placeholder="2024-12-31" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-bolt mr-2"></i>Change Speed
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-times-circle mr-2 text-red-600"></i>Cancel Service
+            </h3>
+            <form method="post" action="{{ url_for('utopia.cancel_service') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Customer ID</label>
+                    <input name="cid" placeholder="Customer ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Site ID</label>
+                    <input name="siteid" placeholder="Site ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Issue Date (YYYY-MM-DD)</label>
+                    <input name="issuedate" placeholder="2024-12-31" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-ban mr-2"></i>Cancel Service
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Outage Tickets -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-exclamation-triangle mr-2 text-yellow-600"></i>Search Outage Tickets
+            </h3>
+            <form method="post" action="{{ url_for('utopia.search_outage_tickets') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Site ID (optional)</label>
+                    <input name="siteid" placeholder="Site ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-search mr-2"></i>Search Tickets
+                </button>
+            </form>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-8 hover-lift">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6">
+                <i class="fas fa-ticket-alt mr-2 text-blue-600"></i>Get Outage Ticket
+            </h3>
+            <form method="post" action="{{ url_for('utopia.get_outage_ticket') }}" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Ticket ID</label>
+                    <input name="ticketid" placeholder="Ticket ID" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full gradient-bg hover:shadow-lg text-white font-semibold px-6 py-3 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-search mr-2"></i>Get Ticket
+                </button>
+            </form>
+        </div>
     </div>
 </div>
 
