@@ -19,8 +19,8 @@ from functools import wraps
 from datetime import timedelta, datetime
 
 # Blueprints import
-from app.services.powercode_bp import powercode_bp
-from app.services.utopia_bp import utopia_bp
+from app.routes.powercode_route import powercode_bp
+from app.routes.utopia_route import utopia_bp
 
 
 
