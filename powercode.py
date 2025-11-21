@@ -138,7 +138,7 @@ def search_customers_with_uapi(searchString):
     search by name/phone
     """
 
-    path = "customer/tags/customer/Find"
+    path = "customer/Find"
     url = f"{config.PC_URL_UAPI}/{path}"
 
     params = {
