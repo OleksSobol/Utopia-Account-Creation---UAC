@@ -145,7 +145,7 @@ def search_customers_with_uapi(searchString):
         "query": searchString,
     }
 
-    response = requests.post(
+    response = requests.get(
         url,
         params = params,
         auth = PcApiKeyAuth(config.PC_API_KEY),
@@ -153,8 +153,6 @@ def search_customers_with_uapi(searchString):
     )
 
     return response.json()
-
-
 
 
 #===========================================
