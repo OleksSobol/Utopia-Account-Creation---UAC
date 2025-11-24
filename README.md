@@ -3,6 +3,7 @@
 A Flask-based service that integrates Utopia webhook events with PowerCode.
 The service receives Utopia callbacks (webhooks), looks up or creates customers in PowerCode, assigns service plans and tickets, logs activity, and sends notification emails.
 
+![Demo GIF showing webhook flow](assets/demo.gif)
 ---
 
 ## Quick Summary
