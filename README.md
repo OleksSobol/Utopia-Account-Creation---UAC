@@ -1,5 +1,241 @@
 # Utopia API Handler
 
+A Flask-based service that integrates Utopia webhook events with PowerCode.
+The service receives Utopia callbacks (webhooks), looks up or creates customers in PowerCode, assigns service plans and tickets, logs activity, and sends notification emails.
+
+---
+
+## Quick Summary
+- Receives webhook callbacks at `/api-callback` (POST JSON).
+- Searches PowerCode for existing customers, creates customers if needed.
+- Adds service plans and fees to customers.
+- Creates tickets (using a template editor) and adds tags.
+- Tracks failures and provides an admin UI to review/resolve them.
+- Sends email notifications on success/failure.
+
+## Features
+- Webhook handler for Utopia events
+- Admin UI (session-based login) for lookups, manual customer creation, ticket template editing, and failure management
+- Failure tracker with REST API for listing, resolving, and deleting failure records
+- Ticket template CRUD (save/load/list/delete)
+- Config editor and ability to trigger service restart (production only)
+- Log viewer and downloadable logs
+
+## Repository layout
+- `api_callback.py` - main Flask app and business logic (webhook, admin endpoints)
+- `app/` - blueprints and route handlers (`powercode_route.py`, `utopia_route.py`)
+- `deployment/` - systemd unit and helper scripts (`api_callback.service`, `deploy_systemd_service.sh`, `restart_service.sh`)
+- `ticket_descriptions/` - ticket templates
+- `tests/` - unit and integration tests
+- `.env.example` - environment variables template (copy to `.env`)
+
+## Requirements
+- Python 3.8+
+- See `requirements.txt` for Python dependencies (Flask, Flask-Mail, requests, python-dotenv, ...)
+
+## Configuration (environment variables)
+Create a `.env` in the project root by copying the example, and fill values before running.
+
+```bash
+cp .env.example .env
+# Edit .env and populate required variables
+```
+
+Important variables (provide in `.env`): `PC_API_KEY`, `UTOPIA_API_KEY`, `PC_URL`, `PC_URL_TICKET`, `UTOPIA_URL_ENDPOINT`, `MAIL_SERVER`, `MAIL_PORT`, `EMAIL_SENDER`, `EMAIL_RECIPIENTS`, `CUSTOMER_PORTAL_PASSWORD`, `PC_VERIFY_SSL`, `SECRET_KEY`, etc.
+
+Note: Never commit `.env` to source control.
+
+## Running locally (development)
+1. Install dependencies:
+
+```powershell
+cd e:\workspace\work_projects\globalnet\UAC-Utopia-Account-Creation
+pip install -r requirements.txt
+```
+
+2. Copy `.env.example` and edit values:
+
+```powershell
+cp .env.example .env
+# edit .env with a text editor
+```
+
+3. Start the app (development server):
+
+```powershell
+python api_callback.py
+```
+
+Open `http://localhost:5050` for the admin UI. The Flask dev server is used only for development and debugging.
+
+Important: `api_callback.py` currently calls `app.run(..., debug=True)` in development — set `debug=False` or use a production WSGI server for production.
+
+## Testing
+Run tests with `pytest` from the project root:
+
+```powershell
+pip install -r requirements.txt
+pytest -q
+```
+
+## Webhook usage and testing
+The webhook expects JSON POST requests to `/api-callback`. Example quick test using `curl`:
+
+```bash
+curl -X POST http://localhost:5050/api-callback \
+  -H "Content-Type: application/json" \
+  -d '{"event":"Project New Order","orderref":"ABC123","msg":"Project New Order"}'
+```
+
+The app will fetch order details from Utopia (using `Utopia.getCustomerFromUtopia(orderref)`), then process the order.
+
+## Admin UI
+- `/login` - login page (session-based). Credentials are managed in `users.json` and via config admin credentials.
+- `/admin` - lookup/creation UI
+- `/admin/failures` - failure management UI
+- `/admin/ticket-editor` - edit ticket templates
+- `/admin/config` - view/edit environment-backed configuration (requires appropriate user permissions)
+
+## Logging
+Logs are written to the file configured by `LOG_FILE` in `config.py` (often `api_class.log` or similar). Use the log viewer in the admin UI or tail the file on the server:
+
+```bash
+tail -f /path/to/api_class.log
+```
+
+## Deployment (recommended production approach)
+This project includes a `deployment/` directory with a systemd unit and helper scripts. Production should run under a WSGI server (gunicorn, uWSGI) and be managed by systemd.
+
+Typical production deploy steps (on the server):
+
+```bash
+ssh deploy@your-server
+cd /srv/utopia-api  # or whatever path you use
+git pull origin main
+cp .env.production .env   # populate production env file securely
+sudo systemctl daemon-reload
+sudo systemctl restart api_callback.service
+sudo journalctl -u api_callback -f
+```
+
+If you update the unit file (`deployment/api_callback.service`), run `sudo systemctl daemon-reload` before restarting.
+
+Note: README previously referenced `./deploy_changes_UAC.sh`. The current `deployment/` folder contains `deploy_systemd_service.sh` — update your docs or add a wrapper script to match your workflow.
+
+## Security recommendations
+- Do not run the Flask dev server (`debug=True`) in production.
+- Enable SSL verification for external APIs (`PC_VERIFY_SSL=true`) and fix certificates on the PowerCode side.
+- Harden the webhook endpoint: require an HMAC signature or API key header and verify it.
+- Ensure the `login_required` decorator is fully implemented and applied to all sensitive routes.
+- Do not log secrets (API keys, full passwords). Review logging calls.
+
+## Failure tracking
+Failures are stored/managed by `FailureTracker` (see `failure_tracker.py`) and surfaced in the admin UI. Endpoints include:
+
+- `GET /api/failures` - list failures
+- `POST /api/failures/<orderref>/resolve` - resolve a failure
+- `DELETE /api/failures/<orderref>/delete` - delete a failure
+
+## Ticket templates
+Templates live in `ticket_descriptions/`. The admin UI provides save/load/list/delete operations. Templates are used to populate ticket descriptions when creating tickets in PowerCode.
+
+## Creating a demo GIF for GitHub
+To showcase the app on GitHub, record a short demo GIF (e.g., login, run a webhook test, see logs). Below are reliable ways to create a GIF from a terminal session or screen recording.
+
+Option A — Record terminal session with `asciinema` + convert to GIF
+
+1. Install tools (on Linux):
+
+```bash
+# install asciinema
+sudo apt install -y asciinema
+# pip-based converter
+pip install asciinema2gif
+```
+
+2. Record the session (run commands that show the app start and a curl to `/api-callback`):
+
+```bash
+asciinema rec demo.cast
+# perform commands (start app, run curl, show logs)
+# Press Ctrl-D or type exit to finish recording
+```
+
+3. Convert to GIF:
+
+```bash
+asciinema2gif demo.cast demo.gif
+```
+
+Option B — Use `svg-term-cli` to capture an asciicast and convert to GIF
+
+1. Record with `asciinema` like above.
+2. Convert to SVG (on a machine with Node.js):
+
+```bash
+npm install -g svg-term-cli
+svg-term --in demo.cast --out demo.svg --window --profile boxy
+```
+
+3. Convert SVG to GIF (ImageMagick/ffmpeg):
+
+```bash
+convert demo.svg demo.gif
+# or using ffmpeg if you produce a sequence
+```
+
+Option C — Screen recording to GIF (GUI)
+
+Use `peek` (Linux) or `Gifox`/`LICEcap` (macOS/Windows) to select an area and record a short clip. Save as `.gif`.
+
+General notes for GIFs
+- Keep GIFs short (3–8 seconds) and small (optimize with `gifsicle` or `ffmpeg` conversions).
+- Place the GIF into the repo, e.g. `assets/demo.gif`, commit and reference in README using Markdown:
+
+```markdown
+![Quick demo of Utopia API Handler](assets/demo.gif)
+```
+
+To optimize:
+
+```bash
+# Reduce colors and resize
+gifsicle --optimize=3 --colors 64 demo.gif -o demo.opt.gif
+```
+
+## Adding the GIF to this repository
+1. Create `assets/` at repo root and copy `demo.gif` there.
+2. Commit and push:
+
+```bash
+git add assets/demo.gif
+git commit -m "docs: add demo GIF showing webhook and admin UI" 
+git push origin main
+```
+
+3. Reference the GIF in the README above the Quick Start or Usage section.
+
+## Contributing
+- Follow existing style. Run tests and lint locally before submitting PRs.
+
+## Troubleshooting
+- If the app prints `Missing required environment variables`, ensure `.env` contains all required keys.
+- If `No module named 'dotenv'`, run `pip install python-dotenv`.
+- For SSL errors with PowerCode, prefer fixing certs and enabling `PC_VERIFY_SSL=true` rather than disabling verification.
+
+## Contact / Maintainers
+Open issues or PRs on the GitHub repository for bugs and feature requests.
+
+---
+
+If you want, I can:
+- (A) add a small `assets/demo.gif` placeholder and update the README to embed it, or
+- (B) generate a demo cast script you can run locally to produce a GIF, or
+- (C) update deployment instructions to include exact `systemctl` commands for your server.
+
+Tell me which you prefer and I will proceed.
+# Utopia API Handler
+
 This Python project is designed to handle customer data integration between Utopia and PowerCode through an API. It processes orders from Utopia, searches for customers in PowerCode, and creates customer records in PowerCode if they do not exist. Additionally, it assigns service plans and sends notification emails.
 
 ## Features
